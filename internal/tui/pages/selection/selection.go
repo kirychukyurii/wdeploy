@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/selector"
@@ -33,10 +34,11 @@ type Selection struct {
 	selector   *selector.Selector
 	activePane pane
 	tabs       *tabs.Tabs
+	logger     lib.Logger
 }
 
 // New creates a new selection model.
-func New(common common.Common) *Selection {
+func New(common common.Common, logger lib.Logger) *Selection {
 	ts := make([]string, lastPane)
 	for i, b := range []pane{selectorPane, readmePane} {
 		ts[i] = b.String()
@@ -51,11 +53,12 @@ func New(common common.Common) *Selection {
 		common:     common,
 		activePane: selectorPane, // start with the selector focused
 		tabs:       t,
+		logger:     logger,
 	}
 
 	selector := selector.New(common,
 		[]selector.IdentifiableItem{},
-		ItemDelegate{&common, &sel.activePane})
+		ItemDelegate{&common, &sel.activePane}, logger)
 	selector.SetShowTitle(false)
 	selector.SetShowHelp(false)
 	selector.SetShowStatusBar(false)
@@ -157,12 +160,33 @@ func (s *Selection) FullHelp() [][]key.Binding {
 func (s *Selection) Init() tea.Cmd {
 	items := make([]selector.IdentifiableItem, 0)
 
-	// Put configured repos first
-	items = append(items, Item{action: app.ActionItem{
-		SetID:          "vars",
-		SetName:        "Vars",
-		SetDescription: "Vars",
-	}})
+	//actions := app.ActionItems.New()
+
+	actions := app.ActionItems{
+		app.ActionItem{
+			Command: "vars",
+			Name:    "Variables",
+			Action:  "Variables are needed for setup version of Webitel services or whether install Grafana Dashboards, Fail2ban, LetsEncrypt certificate",
+		},
+
+		app.ActionItem{
+			Command: "hosts",
+			Name:    "Hosts credentials",
+			Action:  "For deploying Webitel services you need specify server(s) credentials for connection",
+		},
+		app.ActionItem{
+			Command: "deploy",
+			Name:    "Deploy Webitel",
+			Action:  "You are one step closer to deploy Webitel services! Choose this and go on",
+		},
+	}
+
+	for _, a := range actions {
+		items = append(items, Item{
+			action: a,
+			cmd:    a.Command,
+		})
+	}
 
 	return tea.Batch(
 		s.selector.Init(),
@@ -172,6 +196,7 @@ func (s *Selection) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (s *Selection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -204,6 +229,7 @@ func (s *Selection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 	}
+
 	return s, tea.Batch(cmds...)
 }
 

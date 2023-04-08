@@ -5,8 +5,3 @@ type Action interface {
 	Title() string
 	Description() string
 }
-
-type Actions interface {
-	GetAction(string) (Action, error)
-	NewActionItem() []Action
-}

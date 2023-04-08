@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 )
 
@@ -13,6 +14,7 @@ type Selector struct {
 	common      common.Common
 	active      int
 	filterState list.FilterState
+	logger      lib.Logger
 }
 
 // IdentifiableItem is an item that can be identified by a string. Implements
@@ -34,7 +36,7 @@ type SelectMsg struct{ IdentifiableItem }
 type ActiveMsg struct{ IdentifiableItem }
 
 // New creates a new selector.
-func New(common common.Common, items []IdentifiableItem, delegate ItemDelegate) *Selector {
+func New(common common.Common, items []IdentifiableItem, delegate ItemDelegate, logger lib.Logger) *Selector {
 	itms := make([]list.Item, len(items))
 	for i, item := range items {
 		itms[i] = item
@@ -43,6 +45,7 @@ func New(common common.Common, items []IdentifiableItem, delegate ItemDelegate) 
 	s := &Selector{
 		Model:  l,
 		common: common,
+		logger: logger,
 	}
 	s.SetSize(common.Width, common.Height)
 	return s
@@ -173,6 +176,7 @@ func (s *Selector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case list.FilterMatchesMsg:
 		cmds = append(cmds, s.activeFilterCmd)
 	}
+
 	m, cmd := s.Model.Update(msg)
 	s.Model = m
 	if cmd != nil {
@@ -189,6 +193,7 @@ func (s *Selector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, s.activeCmd)
 	}
 	s.active = s.Model.Index()
+
 	return s, tea.Batch(cmds...)
 }
 
@@ -208,6 +213,7 @@ func (s *Selector) selectCmd() tea.Msg {
 	if !ok {
 		return SelectMsg{}
 	}
+	s.logger.Zap.Debugf("selectCmd() i=%s", i)
 	return SelectMsg{i}
 }
 

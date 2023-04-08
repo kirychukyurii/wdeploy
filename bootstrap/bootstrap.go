@@ -36,9 +36,9 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger) {
 
 				// Initialize and start app.
 				width, height, err := terminal.GetSize(0)
-				logger.Zap.Debug(fmt.Sprintf("width: %d, height: %d", width, height))
+				logger.Zap.Debug(fmt.Sprintf("Initial terminal size: width=%d, height=%d", width, height))
 				if err != nil {
-					logger.Zap.Fatalf("Failed to start: %s", err.Error())
+					logger.Zap.Fatalf("Failed to get terminal size: %s", err.Error())
 				}
 
 				c := common.Common{
@@ -49,12 +49,11 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger) {
 					Zone:   zone.New(),
 				}
 
-				initialModel := tui.New(c)
+				initialModel := tui.New(c, logger)
 				p := tea.NewProgram(initialModel, opts...)
 				if _, err := p.Run(); err != nil {
 					logger.Zap.Fatalf("Failed to start: %s", err.Error())
 				}
-
 			}()
 
 			return nil

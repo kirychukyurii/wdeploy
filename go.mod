@@ -3,6 +3,7 @@ module github.com/kirychukyurii/wdeploy
 go 1.20
 
 require (
+	github.com/alecthomas/chroma v0.10.0
 	github.com/charmbracelet/bubbles v0.13.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/glamour v0.6.0
@@ -11,6 +12,7 @@ require (
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
+	github.com/muesli/termenv v0.15.1
 	github.com/spf13/cobra v1.6.1
 	go.uber.org/fx v1.19.2
 	go.uber.org/zap v1.23.0
@@ -19,7 +21,6 @@ require (
 )
 
 require (
-	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
@@ -36,7 +37,6 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/mango v0.1.0 // indirect
 	github.com/muesli/mango-pflag v0.1.0 // indirect
-	github.com/muesli/termenv v0.15.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect

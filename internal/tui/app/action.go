@@ -1,43 +1,25 @@
 package app
 
 type ActionItem struct {
-	SetID          string
-	SetName        string
-	SetDescription string
+	Command string
+	Name    string
+	Action  string
 }
 
+type ActionItems []ActionItem
+
 func (a ActionItem) Description() string {
-	return a.SetDescription
+	return a.Action
 }
 
 func (a ActionItem) ID() string {
-	return a.SetID
+	return a.Command
 }
 
 func (a ActionItem) FilterValue() string {
-	return a.SetName
+	return a.Name
 }
 
 func (a ActionItem) Title() string {
-	return a.SetName
-}
-
-func (a ActionItem) NewActionItem() []ActionItem {
-	return []ActionItem{
-		{
-			SetID:          "vars",
-			SetName:        "Configure vars",
-			SetDescription: "test var",
-		},
-		{
-			SetID:          "hosts",
-			SetName:        "Configure hosts",
-			SetDescription: "test host",
-		},
-		{
-			SetID:          "deploy",
-			SetName:        "Deploy Webitel",
-			SetDescription: "test deploy",
-		},
-	}
+	return a.Name
 }

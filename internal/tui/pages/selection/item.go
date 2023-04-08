@@ -76,12 +76,7 @@ func (d ItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, d.common.KeyMap.Copy):
-			fmt.Println(item, idx)
-			/*
-				item.copied = time.Now()
-				d.common.Copy.Copy(item.Command())
-				return m.SetItem(idx, item)
-			*/
+			return m.SetItem(idx, item)
 		}
 	}
 	return nil

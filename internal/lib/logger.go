@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -99,7 +98,7 @@ func toWriter(config config.LoggerConfig) zapcore.WriteSyncer {
 	}
 
 	return zapcore.NewMultiWriteSyncer(
-		zapcore.AddSync(os.Stdout),
+		//zapcore.AddSync(os.Stdout),
 
 		// file rotation
 		zapcore.AddSync(&lumberjack.Logger{
