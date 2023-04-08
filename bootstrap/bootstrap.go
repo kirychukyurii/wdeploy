@@ -12,7 +12,7 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/styles"
 	zone "github.com/lrstanley/bubblezone"
 	"go.uber.org/fx"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 var Module = fx.Options(
@@ -35,7 +35,7 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger) {
 				opts = append(opts, tea.WithAltScreen(), tea.WithMouseCellMotion())
 
 				// Initialize and start app.
-				width, height, err := terminal.GetSize(0)
+				width, height, err := term.GetSize(0)
 				logger.Zap.Debug(fmt.Sprintf("Initial terminal size: width=%d, height=%d", width, height))
 				if err != nil {
 					logger.Zap.Fatalf("Failed to get terminal size: %s", err.Error())
