@@ -16,15 +16,16 @@ import (
 )
 
 var Module = fx.Options(
-	config.Module,
 	lib.Module,
+	config.Module,
 	fx.Invoke(bootstrap),
 )
 
-func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger) {
+func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger, config config.Config) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logger.Zap.Info("Starting Application")
+			fmt.Println(config)
 
 			go func() {
 				logger.Zap.Debug("Started goroutine")
@@ -50,6 +51,7 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger) {
 				}
 
 				initialModel := tui.New(c, logger)
+
 				p := tea.NewProgram(initialModel, opts...)
 				if _, err := p.Run(); err != nil {
 					logger.Zap.Fatalf("Failed to start: %s", err.Error())

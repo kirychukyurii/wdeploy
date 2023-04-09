@@ -17,7 +17,7 @@ type Logger struct {
 	DesugarZap *zap.Logger        // performance-sensitive code
 }
 
-func NewLogger(config config.LoggerConfig) Logger {
+func NewLogger(config config.Config) Logger {
 	var options []zap.Option
 	var encoder zapcore.Encoder
 	/*
@@ -84,7 +84,7 @@ func toLevel(level string) zapcore.Level {
 	}
 }
 
-func toWriter(config config.LoggerConfig) zapcore.WriteSyncer {
+func toWriter(config config.Config) zapcore.WriteSyncer {
 	fp := ""
 	sp := string(filepath.Separator)
 

@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"go.uber.org/fx"
 	"go.uber.org/zap/zapcore"
 )
@@ -11,42 +13,87 @@ var Module = fx.Options(
 	fx.Provide(NewConfig),
 )
 
-type LoggerConfig struct {
-	LogLevel     string
-	LogFormat    string
-	LogDirectory string
+type Config struct {
+	VarsFile  string
+	HostsFile string
+	LoggerConfig
+	Variables
+	Inventory
 }
 
-func NewConfig() LoggerConfig {
-	props := new(LoggerConfig)
+var varsConfigPath = "./config.yml"
+var hostsConfigPath = "./config.yml"
+var logLevel = "info"
+var logFormat = "console"
+var logDirectory = "./"
 
-	props.LogLevel = "debug"
-	props.LogFormat = "console"
-	props.LogDirectory = "./"
-
-	return *props
+var defaultConfig = Config{
+	VarsFile:  varsConfigPath,
+	HostsFile: hostsConfigPath,
+	LoggerConfig: LoggerConfig{
+		LogLevel:     logLevel,
+		LogFormat:    logFormat,
+		LogDirectory: logDirectory,
+	},
 }
 
-func SetConfigPath(path string) {
+func NewConfig() Config {
+	config := defaultConfig
+
+	viper.SetConfigFile(varsConfigPath)
+	if err := viper.ReadInConfig(); err != nil {
+		panic(errors.Wrap(err, "failed to read config"))
+	}
+
+	if err := viper.Unmarshal(&config.Variables); err != nil {
+		panic(errors.Wrap(err, "failed to marshal config"))
+	}
+
+	viper.SetConfigFile(hostsConfigPath)
+	if err := viper.ReadInConfig(); err != nil {
+		panic(errors.Wrap(err, "failed to read config"))
+	}
+
+	if err := viper.Unmarshal(&config.Inventory); err != nil {
+		panic(errors.Wrap(err, "failed to marshal config"))
+	}
+
+	config.VarsFile = varsConfigPath
+	config.HostsFile = hostsConfigPath
+	config.LogLevel = logLevel
+	config.LogFormat = logFormat
+	config.LogDirectory = logDirectory
+
+	return config
+}
+
+func SetVarConfigPath(path string) {
 	if !file.IsFile(path) {
 		panic(fmt.Sprintf("Path doesnt exists: %s", path))
-		// logger.Zap.Panicf("Path doesnt exists: %s", path)
 	}
+
+	fmt.Printf("loaded file: vars=%s\n", path)
+	varsConfigPath = path
 }
 
-func ParseLogLevel(logLevel string) {
-	level, err := zapcore.ParseLevel(logLevel)
+func SetHostsConfigPath(path string) {
+	if !file.IsFile(path) {
+		panic(fmt.Sprintf("Path doesnt exists: %s", path))
+	}
+
+	fmt.Printf("loaded file: hosts=%s\n", path)
+	hostsConfigPath = path
+}
+
+func SetLoggerProperties(level string, format string, directory string) {
+	_, err := zapcore.ParseLevel(level)
 	if err != nil {
-		logLevel = "info"
-		fmt.Printf("%s: incorrect log level: %s. Setting to default: %s", err.Error(), level, logLevel)
-		// logger.Zap.Warnf("Setting to default log-level: %s", logLevel)
+		level = logLevel
+		fmt.Printf("%s. Setting to default: %s\n", err.Error(), level)
 	}
-}
 
-func SetLoggerProperties(logLevel string, logFormat string, logFile string) {
-	props := new(LoggerConfig)
-
-	props.LogLevel = logLevel
-	props.LogFormat = logFormat
-	props.LogDirectory = logFile
+	fmt.Printf("setting logger properties: log-level=%s, log-format=%s, log-directory=%s\n", level, format, directory)
+	logLevel = level
+	logFormat = format
+	logDirectory = directory
 }
