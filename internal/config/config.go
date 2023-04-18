@@ -1,12 +1,15 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
+	"github.com/adrg/xdg"
 	"go.uber.org/fx"
-	"go.uber.org/zap/zapcore"
+	"gopkg.in/yaml.v3"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
 )
 
 var Module = fx.Options(
@@ -14,6 +17,7 @@ var Module = fx.Options(
 )
 
 type Config struct {
+	Home      string
 	VarsFile  string
 	HostsFile string
 	LoggerConfig
@@ -21,79 +25,124 @@ type Config struct {
 	Inventory
 }
 
-var varsConfigPath = "./config.yml"
-var hostsConfigPath = "./config.yml"
-var logLevel = "info"
-var logFormat = "console"
-var logDirectory = "./"
+var (
+	defaultVarsConfigPath  = "./internal/templates/vars/vars.tpl"
+	defaultHostsConfigPath = "./inventories/production/inventory.yml"
+	defaultLogLevel        = "info"
+	defaultLogFormat       = "console"
+	defaultLogDirectory    = "./"
+	defaultWebitelUser     = ""
+	defaultWebitelPass     = ""
+)
 
-var defaultConfig = Config{
-	VarsFile:  varsConfigPath,
-	HostsFile: hostsConfigPath,
-	LoggerConfig: LoggerConfig{
-		LogLevel:     logLevel,
-		LogFormat:    logFormat,
-		LogDirectory: logDirectory,
-	},
+func SetProperties(logLevel, logFormat, logFile, varsFile, inventoryFile, user, password string) {
+	defaultLogLevel = logLevel
+	defaultLogFormat = logFormat
+	defaultLogDirectory = logFile
+	defaultVarsConfigPath = varsFile
+	defaultHostsConfigPath = inventoryFile
+	defaultWebitelUser = user
+	defaultWebitelPass = password
 }
 
 func NewConfig() Config {
-	config := defaultConfig
-
-	viper.SetConfigFile(varsConfigPath)
-	if err := viper.ReadInConfig(); err != nil {
-		panic(errors.Wrap(err, "failed to read config"))
+	config := Config{
+		Home:      defaultHome(),
+		VarsFile:  defaultVarsConfigPath,
+		HostsFile: defaultHostsConfigPath,
+		LoggerConfig: LoggerConfig{
+			LogLevel:     defaultLogLevel,
+			LogFormat:    defaultLogFormat,
+			LogDirectory: defaultLogDirectory,
+		},
+		Variables: Variables{
+			WebitelRepositoryUser:     defaultWebitelUser,
+			WebitelRepositoryPassword: defaultWebitelPass,
+		},
 	}
 
-	if err := viper.Unmarshal(&config.Variables); err != nil {
-		panic(errors.Wrap(err, "failed to marshal config"))
-	}
+	config = createVarsConfigFromTpl(config)
 
-	viper.SetConfigFile(hostsConfigPath)
-	if err := viper.ReadInConfig(); err != nil {
-		panic(errors.Wrap(err, "failed to read config"))
+	if err := config.readVarsToStruct(); err != nil {
+		fmt.Println(err)
+		return config
 	}
-
-	if err := viper.Unmarshal(&config.Inventory); err != nil {
-		panic(errors.Wrap(err, "failed to marshal config"))
-	}
-
-	config.VarsFile = varsConfigPath
-	config.HostsFile = hostsConfigPath
-	config.LogLevel = logLevel
-	config.LogFormat = logFormat
-	config.LogDirectory = logDirectory
 
 	return config
 }
 
-func SetVarConfigPath(path string) {
-	if !file.IsFile(path) {
-		panic(fmt.Sprintf("Path doesnt exists: %s", path))
-	}
-
-	fmt.Printf("loaded file: vars=%s\n", path)
-	varsConfigPath = path
-}
-
-func SetHostsConfigPath(path string) {
-	if !file.IsFile(path) {
-		panic(fmt.Sprintf("Path doesnt exists: %s", path))
-	}
-
-	fmt.Printf("loaded file: hosts=%s\n", path)
-	hostsConfigPath = path
-}
-
-func SetLoggerProperties(level string, format string, directory string) {
-	_, err := zapcore.ParseLevel(level)
+func createVarsConfigFromTpl(config Config) Config {
+	tpl, err := template.ParseFiles(config.VarsFile)
 	if err != nil {
-		level = logLevel
-		fmt.Printf("%s. Setting to default: %s\n", err.Error(), level)
+		fmt.Println(err)
 	}
 
-	fmt.Printf("setting logger properties: log-level=%s, log-format=%s, log-directory=%s\n", level, format, directory)
-	logLevel = level
-	logFormat = format
-	logDirectory = directory
+	cfgPath := getVarsConfigPath(config.WebitelRepositoryUser)
+	config.VarsFile = cfgPath
+
+	file, err := os.Create(cfgPath)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = tpl.Execute(file, config)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return config
+}
+
+func getVarsConfigPath(user string) string {
+	path, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/vars/all.yml", user))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return path
+}
+
+func (c *Config) readVarsToStruct() error {
+	file, err := os.Open(c.VarsFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if err := yaml.NewDecoder(file).Decode(&c.Variables); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Config) GetVarsConfigContent() (fullText string, err error) {
+	var text []string
+
+	file, err := os.Open(c.VarsFile)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		text = append(text, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	fullText = strings.Join(text, "\n")
+	if err := c.readVarsToStruct(); err != nil {
+		return "", err
+	}
+
+	return fullText, nil
+}
+
+// default helpers for the configuration.
+// We use $XDG_DATA_HOME to avoid cluttering the user's home directory.
+func defaultHome() string {
+	return filepath.Join(xdg.DataHome, "wdeploy")
 }

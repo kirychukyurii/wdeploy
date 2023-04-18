@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
@@ -41,11 +42,12 @@ type UI struct {
 	footer     *footer.Footer
 	showFooter bool
 	error      error
+	cfg        config.Config
 	logger     lib.Logger
 }
 
 // New returns a new UI model.
-func New(c common.Common, logger lib.Logger) *UI {
+func New(c common.Common, cfg config.Config, logger lib.Logger) *UI {
 	h := header.New(c, "wdeploy")
 
 	ui := &UI{
@@ -55,6 +57,7 @@ func New(c common.Common, logger lib.Logger) *UI {
 		state:      startState,
 		header:     h,
 		showFooter: true,
+		cfg:        cfg,
 		logger:     logger,
 	}
 	ui.footer = footer.New(c, ui)
@@ -133,7 +136,7 @@ func (ui *UI) SetSize(width, height int) {
 // Init implements tea.Model.
 func (ui *UI) Init() tea.Cmd {
 	ui.pages[selectionPage] = selection.New(ui.common, ui.logger)
-	ui.pages[varsPage] = vars.New(ui.common, ui.logger)
+	ui.pages[varsPage] = vars.New(ui.common, ui.cfg, ui.logger)
 
 	/*
 		ui.pages[varsPage] = vars.New(
@@ -178,8 +181,6 @@ func (ui *UI) IsFiltering() bool {
 // Update implements tea.Model.
 func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
-
-	ui.logger.Zap.Debugf("Update() start ui.activePage=%d", ui.activePage)
 	ui.logger.Zap.Debugf("Update() msg.%T=%s", msg, msg)
 
 	switch msg := msg.(type) {
@@ -278,7 +279,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		*/
 
 	}
-	ui.logger.Zap.Debugf("Update() middle ui.activePage=%d", ui.activePage)
 	h, cmd := ui.header.Update(msg)
 	ui.header = h.(*header.Header)
 	if cmd != nil {
@@ -302,7 +302,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// This fixes determining the height margin of the footer.
 	ui.SetSize(ui.common.Width, ui.common.Height)
 
-	ui.logger.Zap.Debugf("Update() end ui.activePage=%d", ui.activePage)
 	return ui, tea.Batch(cmds...)
 }
 

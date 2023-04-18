@@ -18,6 +18,7 @@ type KeyMap struct {
 	Help      key.Binding
 
 	SelectItem key.Binding
+	EditItem   key.Binding
 	BackItem   key.Binding
 
 	Copy key.Binding
@@ -176,6 +177,16 @@ func DefaultKeyMap() *KeyMap {
 		key.WithHelp(
 			"→",
 			"select",
+		),
+	)
+
+	km.EditItem = key.NewBinding(
+		key.WithKeys(
+			"e",
+		),
+		key.WithHelp(
+			"e",
+			"edit",
 		),
 	)
 

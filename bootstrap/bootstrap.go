@@ -13,6 +13,7 @@ import (
 	zone "github.com/lrstanley/bubblezone"
 	"go.uber.org/fx"
 	"golang.org/x/term"
+	"os"
 )
 
 var Module = fx.Options(
@@ -25,7 +26,11 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger, config config.Config) 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logger.Zap.Info("Starting Application")
-			fmt.Println(config)
+			//fmt.Println(config)
+			if config.WebitelRepositoryUser == "" || config.WebitelRepositoryPassword == "" {
+				fmt.Println("403")
+				os.Exit(1)
+			}
 
 			go func() {
 				logger.Zap.Debug("Started goroutine")
@@ -50,7 +55,7 @@ func bootstrap(lifecycle fx.Lifecycle, logger lib.Logger, config config.Config) 
 					Zone:   zone.New(),
 				}
 
-				initialModel := tui.New(c, logger)
+				initialModel := tui.New(c, config, logger)
 
 				p := tea.NewProgram(initialModel, opts...)
 				if _, err := p.Run(); err != nil {

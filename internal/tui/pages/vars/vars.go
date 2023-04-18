@@ -5,11 +5,13 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/statusbar"
+	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
 )
 
 type state int
@@ -22,15 +24,13 @@ const (
 type tab int
 
 const (
-	readmeTab tab = iota
-	testTab
+	configTab tab = iota
 	lastTab
 )
 
 func (t tab) String() string {
 	return []string{
-		"Readme",
-		"Test",
+		"Config",
 	}[t]
 }
 
@@ -51,16 +51,38 @@ type Repo struct {
 	common       common.Common
 	selectedRepo app.Action
 	statusbar    *statusbar.StatusBar
-	logger       lib.Logger
+
+	activeTab tab
+	tabs      *tabs.Tabs
+	panes     []common.Component
+
+	cfg    config.Config
+	logger lib.Logger
 }
 
 // New returns a new Repo.
-func New(c common.Common, logger lib.Logger) *Repo {
+func New(c common.Common, cfg config.Config, logger lib.Logger) *Repo {
 	sb := statusbar.New(c)
+	ts := make([]string, lastTab)
+	// Tabs must match the order of tab constants above.
+	for i, t := range []tab{configTab} {
+		ts[i] = t.String()
+	}
+	tb := tabs.New(c, ts)
+
+	config := NewConfig(c, cfg, logger)
+
+	// Make sure the order matches the order of tab constants above.
+	panes := []common.Component{
+		config,
+	}
 
 	r := &Repo{
 		common:    c,
 		statusbar: sb,
+		tabs:      tb,
+		panes:     panes,
+		cfg:       cfg,
 		logger:    logger,
 	}
 	return r
@@ -73,8 +95,11 @@ func (r *Repo) SetSize(width, height int) {
 		r.common.Styles.Repo.Header.GetHeight() +
 		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
 		r.common.Styles.StatusBar.GetHeight()
-
+	r.tabs.SetSize(width, height-hm)
 	r.statusbar.SetSize(width, height-hm)
+	for _, p := range r.panes {
+		p.SetSize(width, height-hm)
+	}
 
 }
 
@@ -106,6 +131,7 @@ func (r *Repo) FullHelp() [][]key.Binding {
 func (r *Repo) Init() tea.Cmd {
 	//fmt.Println("vars.go: Init()")
 	return tea.Batch(
+		r.tabs.Init(),
 		r.statusbar.Init(),
 	)
 }
@@ -116,11 +142,26 @@ func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case RepoMsg:
+		r.activeTab = 0
 		r.selectedRepo = app.Action(msg) //git.GitRepo(msg)
 		cmds = append(cmds,
+			r.tabs.Init(),
 			r.updateModels(msg),
 		)
-
+	case tabs.SelectTabMsg:
+		r.activeTab = tab(msg)
+		t, cmd := r.tabs.Update(msg)
+		r.tabs = t.(*tabs.Tabs)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	case tabs.ActiveTabMsg:
+		r.activeTab = tab(msg)
+		if r.selectedRepo != nil {
+			cmds = append(cmds,
+				r.updateStatusBarCmd,
+			)
+		}
 	case tea.KeyMsg, tea.MouseMsg:
 
 		switch msg := msg.(type) {
@@ -151,6 +192,11 @@ func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
+	m, cmd := r.panes[r.activeTab].Update(msg)
+	r.panes[r.activeTab] = m.(common.Component)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
 
 	return r, tea.Batch(cmds...)
 }
@@ -158,18 +204,77 @@ func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View implements tea.Model.
 func (r *Repo) View() string {
 	//fmt.Println("test")
+	/*
+		s := r.common.Styles.Repo.Base.Copy().
+			Width(r.common.Width).
+			Height(r.common.Height)
+		view := lipgloss.JoinVertical(lipgloss.Top,
+			r.headerView(),
+			r.statusbar.View(),
+		)
+		return s.Render(view)
+	*/
 
 	s := r.common.Styles.Repo.Base.Copy().
 		Width(r.common.Width).
 		Height(r.common.Height)
+	repoBodyStyle := r.common.Styles.Repo.Body.Copy()
+	hm := repoBodyStyle.GetVerticalFrameSize() +
+		r.common.Styles.Repo.Header.GetHeight() +
+		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
+		r.common.Styles.StatusBar.GetHeight() +
+		r.common.Styles.Tabs.GetHeight() +
+		r.common.Styles.Tabs.GetVerticalFrameSize()
+	mainStyle := repoBodyStyle.
+		Height(r.common.Height - hm)
+	main := r.common.Zone.Mark(
+		"repo-main",
+		mainStyle.Render(r.panes[r.activeTab].View()),
+	)
 	view := lipgloss.JoinVertical(lipgloss.Top,
 		r.headerView(),
+		r.tabs.View(),
+		main,
 		r.statusbar.View(),
 	)
 	return s.Render(view)
 }
 
 func (r *Repo) headerView() string {
+	/*
+		if r.selectedRepo == nil {
+			return ""
+		}
+		truncate := lipgloss.NewStyle().MaxWidth(r.common.Width)
+		name := r.common.Styles.Repo.HeaderName.Render(r.selectedRepo.Title())
+		desc := r.selectedRepo.Description()
+		if desc == "" {
+			desc = name
+			name = ""
+		} else {
+			desc = r.common.Styles.Repo.HeaderDesc.Render(desc)
+		}
+		urlStyle := r.common.Styles.URLStyle.Copy().
+			Width(r.common.Width - lipgloss.Width(desc) - 1).
+			Align(lipgloss.Right)
+		url := r.selectedRepo.ID()
+
+		url = common.TruncateString(url, r.common.Width-lipgloss.Width(desc)-1)
+		url = r.common.Zone.Mark(
+			fmt.Sprintf("%s-url", r.selectedRepo.ID()),
+			urlStyle.Render(url),
+		)
+		style := r.common.Styles.Repo.Header.Copy().Width(r.common.Width)
+		return style.Render(
+			lipgloss.JoinVertical(lipgloss.Top,
+				truncate.Render(name),
+				truncate.Render(lipgloss.JoinHorizontal(lipgloss.Left,
+					desc,
+					url,
+				)),
+			),
+		)
+	*/
 	if r.selectedRepo == nil {
 		return ""
 	}
@@ -220,6 +325,10 @@ func (r *Repo) updateModels(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, 0)
 
 	return tea.Batch(cmds...)
+}
+
+func updateStatusBarCmd() tea.Msg {
+	return UpdateStatusBarMsg{}
 }
 
 func backCmd() tea.Msg {
