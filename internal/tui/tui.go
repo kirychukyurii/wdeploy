@@ -245,6 +245,7 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case selector.SelectMsg:
 			ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 			ui.activePage = varsPage
+			ui.showFooter = ui.footer.ShowAll()
 		case selector.ActiveMsg:
 			ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 
@@ -291,7 +292,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if ui.state == loadedState {
-
 		m, cmd := ui.pages[ui.activePage].Update(msg)
 		ui.pages[ui.activePage] = m.(common.Component)
 		if cmd != nil {

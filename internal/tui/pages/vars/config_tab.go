@@ -135,7 +135,6 @@ func (r *Readme) Init() tea.Cmd {
 	r.code.GotoTop()
 	return tea.Batch(
 		r.code.SetContent(varsConfig, "yml"),
-		r.updateReadmeCmd,
 	)
 }
 
@@ -197,17 +196,18 @@ func (r *Readme) StatusBarInfo() string {
 	return fmt.Sprintf("☰ %.f%%", r.code.ScrollPercent()*100)
 }
 
-func (r *Readme) updateReadmeCmd() tea.Msg {
-	return ReadmeMsg{}
+func (r *Readme) updateFileContent() tea.Msg {
+	varsConfig, err := r.cfg.GetVarsConfigContent()
+	if err != nil {
+		return nil
+	}
+
+	return FileContentMsg{content: varsConfig, ext: "yml"}
 }
 
-func (r *Readme) selectFileCmd() tea.Msg {
-	return FileContentMsg{"string: c", "yml"}
-}
-
-// editSnippet opens the editor with the selected snippet file path.
+// editConfig opens the editor.
 func (r *Readme) editConfig() tea.Cmd {
 	return tea.ExecProcess(editor.Cmd(r.cfg.VarsFile), func(err error) tea.Msg {
-		return r.updateReadmeCmd()
+		return r.updateFileContent()
 	})
 }

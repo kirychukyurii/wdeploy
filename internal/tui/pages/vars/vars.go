@@ -2,6 +2,7 @@ package vars
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -25,12 +26,14 @@ type tab int
 
 const (
 	configTab tab = iota
+	//testTab
 	lastTab
 )
 
 func (t tab) String() string {
 	return []string{
 		"Config",
+		//"Test",
 	}[t]
 }
 
@@ -71,10 +74,12 @@ func New(c common.Common, cfg config.Config, logger lib.Logger) *Repo {
 	tb := tabs.New(c, ts)
 
 	config := NewConfig(c, cfg, logger)
+	//test := NewConfig(c, cfg, logger)
 
 	// Make sure the order matches the order of tab constants above.
 	panes := []common.Component{
 		config,
+		//	test,
 	}
 
 	r := &Repo{
@@ -117,6 +122,7 @@ func (r *Repo) commonHelp() []key.Binding {
 // ShortHelp implements help.KeyMap.
 func (r *Repo) ShortHelp() []key.Binding {
 	b := r.commonHelp()
+	b = append(b, r.panes[r.activeTab].(help.KeyMap).ShortHelp()...)
 	return b
 }
 
@@ -124,12 +130,12 @@ func (r *Repo) ShortHelp() []key.Binding {
 func (r *Repo) FullHelp() [][]key.Binding {
 	b := make([][]key.Binding, 0)
 	b = append(b, r.commonHelp())
+	b = append(b, r.panes[r.activeTab].(help.KeyMap).FullHelp()...)
 	return b
 }
 
 // Init implements tea.View.
 func (r *Repo) Init() tea.Cmd {
-	//fmt.Println("vars.go: Init()")
 	return tea.Batch(
 		r.tabs.Init(),
 		r.statusbar.Init(),
@@ -139,13 +145,14 @@ func (r *Repo) Init() tea.Cmd {
 // Update implements tea.Model.
 func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
-
+	r.logger.Zap.Debug(msg)
 	switch msg := msg.(type) {
 	case RepoMsg:
 		r.activeTab = 0
 		r.selectedRepo = app.Action(msg) //git.GitRepo(msg)
 		cmds = append(cmds,
 			r.tabs.Init(),
+			r.updateStatusBarCmd,
 			r.updateModels(msg),
 		)
 	case tabs.SelectTabMsg:
@@ -157,13 +164,16 @@ func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tabs.ActiveTabMsg:
 		r.activeTab = tab(msg)
-		if r.selectedRepo != nil {
-			cmds = append(cmds,
-				r.updateStatusBarCmd,
-			)
-		}
+		cmds = append(cmds,
+			r.updateStatusBarCmd,
+		)
 	case tea.KeyMsg, tea.MouseMsg:
-
+		t, cmd := r.tabs.Update(msg)
+		r.tabs = t.(*tabs.Tabs)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		cmds = append(cmds, r.updateStatusBarCmd)
 		switch msg := msg.(type) {
 		case tea.MouseMsg:
 			switch msg.Type {
@@ -310,19 +320,32 @@ func (r *Repo) headerView() string {
 }
 
 func (r *Repo) updateStatusBarCmd() tea.Msg {
-	if r.selectedRepo == nil {
-		return nil
-	}
-	ref := ""
+	/*
+		if r.selectedRepo == nil {
+			return nil
+		}
+	*/
+
+	value := r.panes[r.activeTab].(statusbar.Model).StatusBarValue()
+	info := r.panes[r.activeTab].(statusbar.Model).StatusBarInfo()
 
 	return statusbar.StatusBarMsg{
 		Key:    r.selectedRepo.ID(),
-		Branch: fmt.Sprintf("* %s", ref),
+		Value:  value,
+		Info:   info,
+		Branch: fmt.Sprintf("* main"),
 	}
 }
 
 func (r *Repo) updateModels(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, 0)
+	for i, b := range r.panes {
+		m, cmd := b.Update(msg)
+		r.panes[i] = m.(common.Component)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	}
 
 	return tea.Batch(cmds...)
 }
