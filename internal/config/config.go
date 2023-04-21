@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/adrg/xdg"
 	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
+	"github.com/kirychukyurii/wdeploy/internal/templates/vars"
 	"go.uber.org/fx"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -73,7 +74,7 @@ func NewConfig() Config {
 }
 
 func createVarsConfigFromTpl(config Config) Config {
-	tpl, err := template.ParseFiles(config.VarsFile)
+	tpl, err := template.New("").Parse(vars.Tmpl)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -92,6 +93,28 @@ func createVarsConfigFromTpl(config Config) Config {
 			fmt.Println(err)
 		}
 	}
+
+	/*
+		tpl, err := template.ParseFiles(config.VarsFile)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		cfgPath := getVarsConfigPath(config.WebitelRepositoryUser)
+		config.VarsFile = cfgPath
+
+		if !file.IsFile(cfgPath) {
+			file, err := os.Create(cfgPath)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			err = tpl.Execute(file, config)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	*/
 
 	return config
 }

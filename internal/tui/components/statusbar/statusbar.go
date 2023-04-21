@@ -25,6 +25,7 @@ type StatusBar struct {
 type Model interface {
 	StatusBarValue() string
 	StatusBarInfo() string
+	StatusBarBranch() string
 }
 
 // New creates a new status bar component.

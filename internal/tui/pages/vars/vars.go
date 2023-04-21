@@ -328,12 +328,14 @@ func (r *Repo) updateStatusBarCmd() tea.Msg {
 
 	value := r.panes[r.activeTab].(statusbar.Model).StatusBarValue()
 	info := r.panes[r.activeTab].(statusbar.Model).StatusBarInfo()
+	branch := r.panes[r.activeTab].(statusbar.Model).StatusBarBranch()
 
 	return statusbar.StatusBarMsg{
-		Key:    r.selectedRepo.ID(),
-		Value:  value,
-		Info:   info,
-		Branch: fmt.Sprintf("* main"),
+		Key:   r.selectedRepo.ID(),
+		Value: value,
+		Info:  info,
+		//Branch: fmt.Sprintf("v%s", r.cfg.WebitelVersion),
+		Branch: branch,
 	}
 }
 

@@ -158,6 +158,8 @@ func (r *Readme) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, r.code.SetContent(r.currentContent.content, r.currentContent.ext))
 		case key.Matches(msg, r.common.KeyMap.EditItem):
 			return r, r.editConfig()
+		case key.Matches(msg, r.common.KeyMap.Select):
+			return r, r.editConfig()
 		}
 	case FileContentMsg:
 		r.currentContent = msg
@@ -194,6 +196,11 @@ func (r *Readme) StatusBarValue() string {
 // StatusBarInfo implements statusbar.StatusBar.
 func (r *Readme) StatusBarInfo() string {
 	return fmt.Sprintf("☰ %.f%%", r.code.ScrollPercent()*100)
+}
+
+// StatusBarBranch implements statusbar.StatusBar.
+func (r *Readme) StatusBarBranch() string {
+	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
 }
 
 func (r *Readme) updateFileContent() tea.Msg {
