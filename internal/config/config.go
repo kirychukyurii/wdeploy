@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/adrg/xdg"
+	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
 	"go.uber.org/fx"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -80,26 +81,35 @@ func createVarsConfigFromTpl(config Config) Config {
 	cfgPath := getVarsConfigPath(config.WebitelRepositoryUser)
 	config.VarsFile = cfgPath
 
-	file, err := os.Create(cfgPath)
-	if err != nil {
-		fmt.Println(err)
-	}
+	if !file.IsFile(cfgPath) {
+		file, err := os.Create(cfgPath)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	err = tpl.Execute(file, config)
-	if err != nil {
-		fmt.Println(err)
+		err = tpl.Execute(file, config)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return config
 }
 
-func getVarsConfigPath(user string) string {
-	path, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/vars/all.yml", user))
-	if err != nil {
-		fmt.Println(err)
+func getVarsConfigPath(user string) (cfgPath string) {
+	cfgPath = fmt.Sprintf("wdeploy/%s/vars/all.yml", user)
+	cfgFullPath := fmt.Sprintf("%s/%s", xdg.DataHome, cfgPath)
+
+	if !file.IsFile(cfgFullPath) {
+		cfgPath, err := xdg.DataFile(cfgPath)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		return cfgPath
 	}
 
-	return path
+	return cfgFullPath
 }
 
 func (c *Config) readVarsToStruct() error {
