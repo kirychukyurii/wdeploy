@@ -6,15 +6,15 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 	"io"
 	"strings"
 )
 
 type Item struct {
 	cmd    string
-	action app.Action
+	action action.Action
 }
 
 // ID implements selector.IdentifiableItem.

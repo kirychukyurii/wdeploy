@@ -6,10 +6,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
-	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/selector"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 )
 
 type pane int
@@ -162,19 +162,19 @@ func (s *Selection) Init() tea.Cmd {
 
 	//actions := app.ActionItems.New()
 
-	actions := app.ActionItems{
-		app.ActionItem{
+	actions := action.ActionItems{
+		action.ActionItem{
 			Command: "vars",
 			Name:    "Variables",
 			Action:  "Variables are needed for setup version of Webitel services or whether install Grafana Dashboards, Fail2ban, LetsEncrypt certificate",
 		},
 
-		app.ActionItem{
+		action.ActionItem{
 			Command: "hosts",
 			Name:    "Hosts credentials",
 			Action:  "For deploying Webitel services you need specify server(s) credentials for connection",
 		},
-		app.ActionItem{
+		action.ActionItem{
 			Command: "deploy",
 			Name:    "Deploy Webitel",
 			Action:  "You are one step closer to deploy Webitel services! Choose this and go on",

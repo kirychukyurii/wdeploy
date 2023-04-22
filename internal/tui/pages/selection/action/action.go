@@ -1,4 +1,10 @@
-package app
+package action
+
+type Action interface {
+	ID() string
+	Title() string
+	Description() string
+}
 
 type ActionItem struct {
 	Command string

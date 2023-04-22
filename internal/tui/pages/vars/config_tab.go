@@ -7,10 +7,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
-	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/code"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/editor"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 )
 
 var (
@@ -32,7 +32,7 @@ type FileContentMsg struct {
 type Readme struct {
 	common         common.Common
 	code           *code.Code
-	repo           app.Action
+	repo           action.Action
 	currentContent FileContentMsg
 	lineNumber     bool
 	path           string
@@ -167,7 +167,7 @@ func (r *Readme) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.code.GotoTop()
 		cmds = append(cmds, updateStatusBarCmd)
 	case RepoMsg:
-		r.repo = app.Action(msg)
+		r.repo = action.Action(msg)
 		cmds = append(cmds, r.Init())
 
 	}

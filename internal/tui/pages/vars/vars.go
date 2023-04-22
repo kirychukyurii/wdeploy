@@ -8,11 +8,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
-	"github.com/kirychukyurii/wdeploy/internal/tui/app"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/statusbar"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 )
 
 type state int
@@ -44,7 +44,7 @@ type ResetURLMsg struct{}
 type UpdateStatusBarMsg struct{}
 
 // RepoMsg is a message that contains a git.Repository.
-type RepoMsg app.Action
+type RepoMsg action.Action
 
 // BackMsg is a message to go back to the previous view.
 type BackMsg struct{}
@@ -52,7 +52,7 @@ type BackMsg struct{}
 // Repo is a view for a git repository.
 type Repo struct {
 	common       common.Common
-	selectedRepo app.Action
+	selectedRepo action.Action
 	statusbar    *statusbar.StatusBar
 
 	activeTab tab
@@ -149,7 +149,7 @@ func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case RepoMsg:
 		r.activeTab = 0
-		r.selectedRepo = app.Action(msg) //git.GitRepo(msg)
+		r.selectedRepo = action.Action(msg) //git.GitRepo(msg)
 		cmds = append(cmds,
 			r.tabs.Init(),
 			r.updateStatusBarCmd,
