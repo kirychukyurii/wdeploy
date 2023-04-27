@@ -1,4 +1,4 @@
-package lib
+package logger
 
 import (
 	"github.com/kirychukyurii/wdeploy/internal/config"

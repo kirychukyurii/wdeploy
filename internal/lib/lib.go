@@ -1,8 +1,11 @@
 package lib
 
-import "go.uber.org/fx"
+import (
+	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
+	"go.uber.org/fx"
+)
 
 // Module exports dependency
 var Module = fx.Options(
-	fx.Provide(NewLogger),
+	fx.Provide(logger.NewLogger),
 )

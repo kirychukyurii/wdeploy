@@ -6,11 +6,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/config"
-	"github.com/kirychukyurii/wdeploy/internal/lib"
+	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/header"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/selector"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/deploy"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/hosts"
 	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection"
 	"github.com/kirychukyurii/wdeploy/internal/tui/pages/vars"
 )
@@ -43,16 +45,16 @@ type UI struct {
 	showFooter bool
 	error      error
 	cfg        config.Config
-	logger     lib.Logger
+	logger     logger.Logger
 }
 
 // New returns a new UI model.
-func New(c common.Common, cfg config.Config, logger lib.Logger) *UI {
+func New(c common.Common, cfg config.Config, logger logger.Logger) *UI {
 	h := header.New(c, "wdeploy")
 
 	ui := &UI{
 		common:     c,
-		pages:      make([]common.Component, 2), // pages
+		pages:      make([]common.Component, 4), // pages
 		activePage: selectionPage,
 		state:      startState,
 		header:     h,
@@ -71,6 +73,7 @@ func (ui *UI) getMargins() (wm, hm int) {
 		hm += ui.common.Styles.ServerName.GetHeight() +
 			ui.common.Styles.ServerName.GetVerticalFrameSize()
 	case varsPage:
+	case hostsPage:
 	}
 	wm += style.GetHorizontalFrameSize()
 	hm += style.GetVerticalFrameSize()
@@ -137,6 +140,8 @@ func (ui *UI) SetSize(width, height int) {
 func (ui *UI) Init() tea.Cmd {
 	ui.pages[selectionPage] = selection.New(ui.common, ui.logger)
 	ui.pages[varsPage] = vars.New(ui.common, ui.cfg, ui.logger)
+	ui.pages[hostsPage] = hosts.New(ui.common, ui.cfg, ui.logger)
+	ui.pages[deployPage] = deploy.New(ui.common, ui.cfg, ui.logger)
 
 	/*
 		ui.pages[varsPage] = vars.New(
@@ -155,6 +160,8 @@ func (ui *UI) Init() tea.Cmd {
 	cmds = append(cmds,
 		ui.pages[selectionPage].Init(),
 		ui.pages[varsPage].Init(),
+		ui.pages[hostsPage].Init(),
+		ui.pages[deployPage].Init(),
 
 		/*
 			ui.pages[varsPage].Init(),
@@ -216,10 +223,19 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					return ui, tea.Quit
 				}
-			case ui.activePage == varsPage && key.Matches(msg, ui.common.KeyMap.Back):
+			case ui.activePage != selectionPage && key.Matches(msg, ui.common.KeyMap.Back):
 				ui.activePage = selectionPage
 				// Always show the footer on selection page.
 				ui.showFooter = true
+				/*
+					case ui.activePage == varsPage && key.Matches(msg, ui.common.KeyMap.Back):
+
+					case ui.activePage == hostsPage && key.Matches(msg, ui.common.KeyMap.Back):
+						ui.activePage = selectionPage
+						// Always show the footer on selection page.
+						ui.showFooter = true
+
+				*/
 			}
 		case tea.MouseMsg:
 			switch msg.Type {
@@ -243,9 +259,20 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case vars.RepoMsg:
 		switch msg.(type) {
 		case selector.SelectMsg:
-			ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
-			ui.activePage = varsPage
-			ui.showFooter = ui.footer.ShowAll()
+			switch msg.ID() {
+			case "vars":
+				ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
+				ui.activePage = varsPage
+				ui.showFooter = ui.footer.ShowAll()
+			case "hosts":
+				ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
+				ui.activePage = hostsPage
+				ui.showFooter = ui.footer.ShowAll()
+			case "deploy":
+				ui.activePage = deployPage
+				ui.showFooter = ui.footer.ShowAll()
+			}
+
 		case selector.ActiveMsg:
 			ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 

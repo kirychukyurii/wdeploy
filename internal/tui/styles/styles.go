@@ -120,6 +120,17 @@ type Styles struct {
 		NoItems     lipgloss.Style
 	}
 
+	Dialog struct {
+		Normal struct {
+			Button lipgloss.Style
+		}
+		Active struct {
+			Button lipgloss.Style
+		}
+		Box      lipgloss.Style
+		Question lipgloss.Style
+	}
+
 	Spinner lipgloss.Style
 
 	CodeNoContent lipgloss.Style
@@ -151,6 +162,34 @@ func DefaultStyles() *Styles {
 
 	s.App = lipgloss.NewStyle().
 		Margin(1, 2)
+
+	s.Dialog.Box = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#874BFD")).
+		//Padding(1, 0).
+		BorderTop(false).
+		BorderLeft(false).
+		BorderRight(false).
+		BorderBottom(false).
+		Height(1)
+
+	s.Dialog.Question = lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		MarginBottom(1).
+		Bold(true)
+
+	s.Dialog.Normal.Button = lipgloss.NewStyle().
+		//Foreground(lipgloss.Color("243")).
+		//Foreground(lipgloss.Color("#FFF7DB")).
+		Background(lipgloss.Color("243")).
+		Padding(0, 1).
+		Margin(0, 1)
+
+	s.Dialog.Active.Button = s.Dialog.Normal.Button.Copy().
+		//Foreground(lipgloss.Color("212")).
+		//Foreground(lipgloss.Color("#FFF7DB")).
+		Background(lipgloss.Color("212")).
+		Underline(true)
 
 	s.ServerName = lipgloss.NewStyle().
 		Height(1).

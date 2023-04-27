@@ -5,11 +5,11 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/kirychukyurii/wdeploy/internal/lib"
+	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
+	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/selector"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
-	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 )
 
 type pane int
@@ -34,11 +34,11 @@ type Selection struct {
 	selector   *selector.Selector
 	activePane pane
 	tabs       *tabs.Tabs
-	logger     lib.Logger
+	logger     logger.Logger
 }
 
 // New creates a new selection model.
-func New(common common.Common, logger lib.Logger) *Selection {
+func New(common common.Common, logger logger.Logger) *Selection {
 	ts := make([]string, lastPane)
 	for i, b := range []pane{selectorPane, readmePane} {
 		ts[i] = b.String()

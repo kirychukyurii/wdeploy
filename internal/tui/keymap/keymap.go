@@ -8,6 +8,8 @@ type KeyMap struct {
 	Up        key.Binding
 	Down      key.Binding
 	UpDown    key.Binding
+	Left      key.Binding
+	Right     key.Binding
 	LeftRight key.Binding
 	Arrows    key.Binding
 	Select    key.Binding
@@ -70,6 +72,28 @@ func DefaultKeyMap() *KeyMap {
 		),
 		key.WithHelp(
 			"↑↓",
+			"navigate",
+		),
+	)
+
+	km.Left = key.NewBinding(
+		key.WithKeys(
+			"left",
+			"h",
+		),
+		key.WithHelp(
+			"←",
+			"navigate",
+		),
+	)
+
+	km.Right = key.NewBinding(
+		key.WithKeys(
+			"right",
+			"l",
+		),
+		key.WithHelp(
+			"→",
 			"navigate",
 		),
 	)

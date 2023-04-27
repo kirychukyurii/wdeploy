@@ -7,12 +7,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/config"
-	"github.com/kirychukyurii/wdeploy/internal/lib"
+	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
+	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/statusbar"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
-	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
 )
 
 type state int
@@ -60,11 +60,11 @@ type Repo struct {
 	panes     []common.Component
 
 	cfg    config.Config
-	logger lib.Logger
+	logger logger.Logger
 }
 
 // New returns a new Repo.
-func New(c common.Common, cfg config.Config, logger lib.Logger) *Repo {
+func New(c common.Common, cfg config.Config, logger logger.Logger) *Repo {
 	sb := statusbar.New(c)
 	ts := make([]string, lastTab)
 	// Tabs must match the order of tab constants above.

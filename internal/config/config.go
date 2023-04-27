@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/adrg/xdg"
 	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
+	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/custom"
+	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/localhost"
 	"github.com/kirychukyurii/wdeploy/internal/templates/vars"
 	"go.uber.org/fx"
 	"gopkg.in/yaml.v3"
@@ -15,58 +17,64 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(NewConfig),
+	fx.Provide(New),
 )
 
 type Config struct {
-	Home      string
-	VarsFile  string
-	HostsFile string
+	PlaybookFile  string
+	VarsFile      string
+	HostsFile     string
+	InventoryType string
 	LoggerConfig
 	Variables
 	Inventory
 }
 
-var (
-	defaultVarsConfigPath  = "./internal/templates/vars/vars.tpl"
-	defaultHostsConfigPath = "./inventories/production/inventory.yml"
-	defaultLogLevel        = "info"
-	defaultLogFormat       = "console"
-	defaultLogDirectory    = "./"
-	defaultWebitelUser     = ""
-	defaultWebitelPass     = ""
-)
-
-func SetProperties(logLevel, logFormat, logFile, varsFile, inventoryFile, user, password string) {
-	defaultLogLevel = logLevel
-	defaultLogFormat = logFormat
-	defaultLogDirectory = logFile
-	defaultVarsConfigPath = varsFile
-	defaultHostsConfigPath = inventoryFile
-	defaultWebitelUser = user
-	defaultWebitelPass = password
+var DefaultConfig = Config{
+	PlaybookFile:  "playbook.yml",
+	VarsFile:      "",
+	HostsFile:     "",
+	InventoryType: "custom",
+	LoggerConfig: LoggerConfig{
+		LogLevel:     "info",
+		LogFormat:    "console",
+		LogDirectory: "./",
+	},
+	Variables: Variables{
+		WebitelRepositoryUser:     "",
+		WebitelRepositoryPassword: "",
+	},
 }
 
-func NewConfig() Config {
-	config := Config{
-		Home:      defaultHome(),
-		VarsFile:  defaultVarsConfigPath,
-		HostsFile: defaultHostsConfigPath,
-		LoggerConfig: LoggerConfig{
-			LogLevel:     defaultLogLevel,
-			LogFormat:    defaultLogFormat,
-			LogDirectory: defaultLogDirectory,
-		},
-		Variables: Variables{
-			WebitelRepositoryUser:     defaultWebitelUser,
-			WebitelRepositoryPassword: defaultWebitelPass,
-		},
+func New() Config {
+	config := DefaultConfig
+
+	if config.VarsFile == "" {
+		config.VarsFile = getConfigPath("vars", config.WebitelRepositoryUser)
+	}
+	if config.HostsFile == "" {
+		config.HostsFile = getConfigPath("hosts", config.WebitelRepositoryUser)
 	}
 
-	config = createVarsConfigFromTpl(config)
+	fmt.Println(config.VarsFile)
+	fmt.Println(config.HostsFile)
+
+	if !file.IsFile(config.VarsFile) {
+		config = createVarsConfigFromTpl(config)
+	}
 
 	if err := config.readVarsToStruct(); err != nil {
 		fmt.Println(err)
+		return config
+	}
+
+	if !file.IsFile(config.HostsFile) {
+		config = createHostsConfigFromTpl(config)
+	}
+
+	if err := config.readHostsToStruct(); err != nil {
+		fmt.Println(err)
+
 		return config
 	}
 
@@ -74,75 +82,84 @@ func NewConfig() Config {
 }
 
 func createVarsConfigFromTpl(config Config) Config {
+	cfgPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/vars/vars.yml", config.WebitelRepositoryUser))
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	tpl, err := template.New("").Parse(vars.Tmpl)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	cfgPath := getVarsConfigPath(config.WebitelRepositoryUser)
-	config.VarsFile = cfgPath
-
-	if !file.IsFile(cfgPath) {
-		file, err := os.Create(cfgPath)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		err = tpl.Execute(file, config)
-		if err != nil {
-			fmt.Println(err)
-		}
+	f, err := os.Create(cfgPath)
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	/*
-		tpl, err := template.ParseFiles(config.VarsFile)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		cfgPath := getVarsConfigPath(config.WebitelRepositoryUser)
-		config.VarsFile = cfgPath
-
-		if !file.IsFile(cfgPath) {
-			file, err := os.Create(cfgPath)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			err = tpl.Execute(file, config)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-	*/
+	err = tpl.Execute(f, config)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return config
 }
 
-func getVarsConfigPath(user string) (cfgPath string) {
-	cfgPath = fmt.Sprintf("wdeploy/%s/vars/all.yml", user)
-	cfgFullPath := fmt.Sprintf("%s/%s", xdg.DataHome, cfgPath)
-
-	if !file.IsFile(cfgFullPath) {
-		cfgPath, err := xdg.DataFile(cfgPath)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		return cfgPath
+func createHostsConfigFromTpl(config Config) Config {
+	cfgPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/hosts/hosts.yml", config.WebitelRepositoryUser))
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	return cfgFullPath
+	hostsTpl := custom.Tmpl
+	if config.InventoryType == "local" {
+		hostsTpl = localhost.Tmpl
+	}
+
+	tpl, err := template.New("").Parse(hostsTpl)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	f, err := os.Create(cfgPath)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = tpl.Execute(f, config)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return config
+}
+
+func getConfigPath(cfgType, user string) (cfgPath string) {
+	return filepath.Join(xdg.DataHome, fmt.Sprintf("wdeploy/%s/%s/%s.yml", user, cfgType, cfgType))
 }
 
 func (c *Config) readVarsToStruct() error {
-	file, err := os.Open(c.VarsFile)
+	f, err := os.Open(c.VarsFile)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer f.Close()
 
-	if err := yaml.NewDecoder(file).Decode(&c.Variables); err != nil {
+	if err := yaml.NewDecoder(f).Decode(&c.Variables); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Config) readHostsToStruct() error {
+	f, err := os.Open(c.HostsFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := yaml.NewDecoder(f).Decode(&c.Inventory); err != nil {
 		return err
 	}
 
@@ -152,13 +169,13 @@ func (c *Config) readVarsToStruct() error {
 func (c *Config) GetVarsConfigContent() (fullText string, err error) {
 	var text []string
 
-	file, err := os.Open(c.VarsFile)
+	f, err := os.Open(c.VarsFile)
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer f.Close()
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		text = append(text, scanner.Text())
 	}
@@ -174,8 +191,27 @@ func (c *Config) GetVarsConfigContent() (fullText string, err error) {
 	return fullText, nil
 }
 
-// default helpers for the configuration.
-// We use $XDG_DATA_HOME to avoid cluttering the user's home directory.
-func defaultHome() string {
-	return filepath.Join(xdg.DataHome, "wdeploy")
+func (c *Config) GetHostsConfigContent() (fullText string, err error) {
+	var text []string
+
+	f, err := os.Open(c.HostsFile)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		text = append(text, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	fullText = strings.Join(text, "\n")
+	if err := c.readHostsToStruct(); err != nil {
+		return "", err
+	}
+
+	return fullText, nil
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/kirychukyurii/wdeploy/internal/lib"
+	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 )
 
@@ -14,7 +14,7 @@ type Selector struct {
 	common      common.Common
 	active      int
 	filterState list.FilterState
-	logger      lib.Logger
+	logger      logger.Logger
 }
 
 // IdentifiableItem is an item that can be identified by a string. Implements
@@ -36,7 +36,7 @@ type SelectMsg struct{ IdentifiableItem }
 type ActiveMsg struct{ IdentifiableItem }
 
 // New creates a new selector.
-func New(common common.Common, items []IdentifiableItem, delegate ItemDelegate, logger lib.Logger) *Selector {
+func New(common common.Common, items []IdentifiableItem, delegate ItemDelegate, logger logger.Logger) *Selector {
 	itms := make([]list.Item, len(items))
 	for i, item := range items {
 		itms[i] = item

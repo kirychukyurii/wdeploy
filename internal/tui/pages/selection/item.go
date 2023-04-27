@@ -7,7 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
-	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection/action"
+	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
 	"io"
 	"strings"
 )

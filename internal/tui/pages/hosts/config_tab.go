@@ -1,4 +1,4 @@
-package vars
+package hosts
 
 import (
 	"fmt"
@@ -28,8 +28,8 @@ type FileContentMsg struct {
 	ext     string
 }
 
-// Readme is the readme component page.
-type Readme struct {
+// Config is the readme component page.
+type Config struct {
 	common         common.Common
 	code           *code.Code
 	repo           action.Action
@@ -46,8 +46,8 @@ type Readme struct {
 }
 
 // NewConfig creates a new config model.
-func NewConfig(common common.Common, cfg config.Config, logger logger.Logger) *Readme {
-	f := &Readme{
+func NewConfig(common common.Common, cfg config.Config, logger logger.Logger) *Config {
+	f := &Config{
 		common:     common,
 		code:       code.New(common, "", ""),
 		lineNumber: true,
@@ -61,13 +61,13 @@ func NewConfig(common common.Common, cfg config.Config, logger logger.Logger) *R
 }
 
 // SetSize implements common.Component.
-func (r *Readme) SetSize(width, height int) {
+func (r *Config) SetSize(width, height int) {
 	r.common.SetSize(width, height)
 	r.code.SetSize(width, height)
 }
 
 // ShortHelp implements help.KeyMap.
-func (r *Readme) ShortHelp() []key.Binding {
+func (r *Config) ShortHelp() []key.Binding {
 	copyKey := r.common.KeyMap.Copy
 	copyKey.SetHelp("c", "copy content")
 	b := []key.Binding{
@@ -89,7 +89,7 @@ func (r *Readme) ShortHelp() []key.Binding {
 }
 
 // FullHelp implements help.KeyMap.
-func (r *Readme) FullHelp() [][]key.Binding {
+func (r *Config) FullHelp() [][]key.Binding {
 	b := make([][]key.Binding, 0)
 
 	copyKey := r.common.KeyMap.Copy
@@ -126,20 +126,21 @@ func (r *Readme) FullHelp() [][]key.Binding {
 }
 
 // Init implements tea.Model.
-func (r *Readme) Init() tea.Cmd {
-	varsConfig, err := r.cfg.GetVarsConfigContent()
+func (r *Config) Init() tea.Cmd {
+
+	hostsConfig, err := r.cfg.GetHostsConfigContent()
 	if err != nil {
 		return nil
 	}
 
 	r.code.GotoTop()
 	return tea.Batch(
-		r.code.SetContent(varsConfig, "yml"),
+		r.code.SetContent(hostsConfig, "yml"),
 	)
 }
 
 // Update implements tea.Model.
-func (r *Readme) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (r *Config) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -180,13 +181,13 @@ func (r *Readme) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View implements tea.Model.
-func (r *Readme) View() string {
+func (r *Config) View() string {
 	return r.code.View()
 }
 
 // StatusBarValue implements statusbar.StatusBar.
-func (r *Readme) StatusBarValue() string {
-	p := r.cfg.VarsFile
+func (r *Config) StatusBarValue() string {
+	p := r.cfg.HostsFile
 	if p == "." {
 		return ""
 	}
@@ -194,27 +195,27 @@ func (r *Readme) StatusBarValue() string {
 }
 
 // StatusBarInfo implements statusbar.StatusBar.
-func (r *Readme) StatusBarInfo() string {
+func (r *Config) StatusBarInfo() string {
 	return fmt.Sprintf("☰ %.f%%", r.code.ScrollPercent()*100)
 }
 
 // StatusBarBranch implements statusbar.StatusBar.
-func (r *Readme) StatusBarBranch() string {
+func (r *Config) StatusBarBranch() string {
 	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
 }
 
-func (r *Readme) updateFileContent() tea.Msg {
-	varsConfig, err := r.cfg.GetVarsConfigContent()
+func (r *Config) updateFileContent() tea.Msg {
+	hostsConfig, err := r.cfg.GetHostsConfigContent()
 	if err != nil {
 		return nil
 	}
 
-	return FileContentMsg{content: varsConfig, ext: "yml"}
+	return FileContentMsg{content: hostsConfig, ext: "yml"}
 }
 
 // editConfig opens the editor.
-func (r *Readme) editConfig() tea.Cmd {
-	return tea.ExecProcess(editor.Cmd(r.cfg.VarsFile), func(err error) tea.Msg {
+func (r *Config) editConfig() tea.Cmd {
+	return tea.ExecProcess(editor.Cmd(r.cfg.HostsFile), func(err error) tea.Msg {
 		return r.updateFileContent()
 	})
 }
