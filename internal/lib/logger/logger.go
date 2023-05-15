@@ -3,7 +3,7 @@ package logger
 import (
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/constants"
-	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

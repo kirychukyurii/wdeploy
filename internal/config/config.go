@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/adrg/xdg"
-	"github.com/kirychukyurii/wdeploy/internal/pkg/file"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/custom"
 	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/localhost"
 	"github.com/kirychukyurii/wdeploy/internal/templates/vars"
@@ -31,7 +31,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	PlaybookFile:  "playbook.yml",
+	PlaybookFile:  "./resources/webitel-ansible/playbook.yml",
 	VarsFile:      "",
 	HostsFile:     "",
 	InventoryType: "custom",
