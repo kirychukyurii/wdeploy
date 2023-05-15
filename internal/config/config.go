@@ -215,3 +215,25 @@ func (c *Config) GetHostsConfigContent() (fullText string, err error) {
 
 	return fullText, nil
 }
+
+func (c *Config) GetAnsibleLogContent() (fullText string, err error) {
+	var text []string
+
+	f, err := os.Open("/home/ubuntu/goland/wdeploy/logs/ansible4.log")
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		text = append(text, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	fullText = strings.Join(text, "\n")
+
+	return fullText, nil
+}

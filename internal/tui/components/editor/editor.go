@@ -8,7 +8,7 @@ import (
 
 const defaultEditor = "nano"
 
-// EditorCmd returns a *exec.Cmd editing the given path with $EDITOR or nano if no
+// Cmd returns a *exec.Cmd editing the given path with $EDITOR or nano if no
 // $EDITOR is set.
 func Cmd(path string) *exec.Cmd {
 	editor, args := getEditor()

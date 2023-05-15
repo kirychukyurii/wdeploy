@@ -2,15 +2,13 @@ package ansible
 
 import (
 	"context"
-	"fmt"
 	"github.com/apenella/go-ansible/pkg/execute"
 	"github.com/apenella/go-ansible/pkg/execute/measure"
 	"github.com/apenella/go-ansible/pkg/options"
 	"github.com/apenella/go-ansible/pkg/playbook"
-	"github.com/apenella/go-ansible/pkg/stdoutcallback/results"
 	"github.com/kirychukyurii/wdeploy/internal/config"
-	"github.com/kirychukyurii/wdeploy/internal/constants"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
+	"os"
 )
 
 type Executor struct {
@@ -26,24 +24,28 @@ func NewExecutor(cfg config.Config, logger logger.Logger) Executor {
 }
 
 func (e Executor) RunPlaybook() error {
+	//w := &zapio.Writer{Log: e.logger.DesugarZap}
+	//defer w.Close()
+
+	e.logger.Zap.Debug("/home/ubuntu/goland/wdeploy/logs/ansible3.log")
+
+	f, err := os.OpenFile("/home/ubuntu/goland/wdeploy/logs/ansible4.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
 	ansiblePlaybookConnectionOptions := &options.AnsibleConnectionOptions{
 		SSHCommonArgs: e.cfg.AnsibleSSHExtraArgs,
 	}
 
 	ansiblePlaybookOptions := &playbook.AnsiblePlaybookOptions{
-		Inventory:     e.cfg.HostsFile,
-		ExtraVarsFile: []string{e.cfg.VarsFile},
+		Inventory: e.cfg.HostsFile,
+		//ExtraVarsFile: []string{e.cfg.VarsFile},
 	}
 
 	executorTimeMeasurement := measure.NewExecutorTimeMeasurement(
 		execute.NewDefaultExecute(
 			execute.WithEnvVar("ANSIBLE_FORCE_COLOR", "true"),
-			execute.WithTransformers(
-				results.Prepend(fmt.Sprintf("Webitel v%s", e.cfg.WebitelVersion)),
-				results.LogFormat(constants.TimeFormat, results.Now),
-			),
+			execute.WithWrite(f),
+			//execute.WithWrite(w),
 		),
-		measure.WithShowDuration(),
 	)
 
 	pb := &playbook.AnsiblePlaybookCmd{
@@ -51,10 +53,10 @@ func (e Executor) RunPlaybook() error {
 		ConnectionOptions: ansiblePlaybookConnectionOptions,
 		Options:           ansiblePlaybookOptions,
 		Exec:              executorTimeMeasurement,
-		//StdoutCallback:    "json",
+		StdoutCallback:    "yaml",
 	}
 
-	err := pb.Run(context.TODO())
+	err = pb.Run(context.TODO())
 	if err != nil {
 		e.logger.Zap.Error(err)
 	}

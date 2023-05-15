@@ -80,6 +80,7 @@ func (r *Code) SetContent(c, ext string) tea.Cmd {
 
 // Init implements tea.Model.
 func (r *Code) Init() tea.Cmd {
+	//fmt.Println("test code init" + r.content)
 	w := r.common.Width
 	c := r.content
 	if c == "" {

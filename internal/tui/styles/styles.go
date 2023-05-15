@@ -166,12 +166,12 @@ func DefaultStyles() *Styles {
 	s.Dialog.Box = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#874BFD")).
-		//Padding(1, 0).
+		Padding(1, 0).
 		BorderTop(false).
 		BorderLeft(false).
 		BorderRight(false).
 		BorderBottom(false).
-		Height(1)
+		Height(2)
 
 	s.Dialog.Question = lipgloss.NewStyle().
 		Align(lipgloss.Center).

@@ -68,17 +68,13 @@ func NewView(common common.Common, cfg config.Config, logger logger.Logger) *Vie
 // SetSize implements common.Component.
 func (r *View) SetSize(width, height int) {
 	r.common.SetSize(width, height)
-	hm := r.common.Styles.Repo.Body.GetVerticalFrameSize() +
-		r.common.Styles.Repo.Header.GetHeight() +
-		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
-		r.common.Styles.StatusBar.GetHeight() +
-		r.common.Styles.Dialog.Box.GetHeight() +
-		r.common.Styles.Dialog.Box.GetVerticalFrameSize()
+	hm := r.common.Styles.Dialog.Box.GetHorizontalFrameSize()
+	//hm := r.common.Styles.Dialog.Box.GetMaxHeight()
 
-	r.logger.Zap.Debug(fmt.Sprintf("width=%d height=%d hm=%d", width, height, hm))
+	r.code.SetSize(width, height-hm-3)
+	r.dialog.SetSize(width, hm)
 
-	r.dialog.SetSize(width, r.common.Styles.Dialog.Box.GetHeight())
-	r.code.SetSize(width, height-hm)
+	r.logger.Zap.Debug(fmt.Sprintf("width=%d height=%d hm=%d", width, height, r.common.Styles.Dialog.Box.GetHeight()))
 }
 
 // ShortHelp implements help.KeyMap.
@@ -86,6 +82,8 @@ func (r *View) ShortHelp() []key.Binding {
 	b := []key.Binding{
 		r.common.KeyMap.LeftRight,
 		r.common.KeyMap.Select,
+		r.common.KeyMap.UpDown,
+		r.common.KeyMap.BackItem,
 	}
 
 	return b
@@ -98,6 +96,12 @@ func (r *View) FullHelp() [][]key.Binding {
 		{
 			k.Left,
 			k.Right,
+			k.Down,
+			k.Up,
+			r.code.KeyMap.PageDown,
+			r.code.KeyMap.PageUp,
+			r.code.KeyMap.HalfPageDown,
+			r.code.KeyMap.HalfPageUp,
 		},
 		{
 			k.Select,
@@ -123,19 +127,10 @@ func (r *View) Init() tea.Cmd {
 
 	view := buf.String()
 
-	/*
-		for _, host := range r.cfg.Inventory.Inventory.Hosts {
-			view += fmt.Sprintf("%s", host.AnsibleHost)
-			view += fmt.Sprintf(" (%s)", strings.Join(host.WebitelServices, ", "))
-			view += "\n"
-		}
-
-	*/
-
 	r.code.GotoTop()
 	return tea.Batch(
 		r.dialog.Init(),
-		r.code.SetContent(view, "markdown"),
+		r.code.SetContent(view, ".md"),
 	)
 }
 
@@ -150,11 +145,6 @@ func (r *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
-		}
-	case dialog.SelectDialogButtonMsg:
-		fmt.Println(msg)
-		if msg == 0 {
-			// cmds = append(cmds, r.spinner.Update(""))
 		}
 	case RepoMsg:
 		r.repo = action.Action(msg)
@@ -171,9 +161,8 @@ func (r *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View implements tea.Model.
 func (r *View) View() string {
 	view := lipgloss.JoinVertical(lipgloss.Top,
-		r.dialog.View(),
-		"\n",
 		r.code.View(),
+		r.dialog.View(),
 	)
 
 	return view
@@ -200,7 +189,7 @@ func (r *View) updateFileContent() tea.Msg {
 		return nil
 	}
 
-	return FileContentMsg{content: hostsConfig, ext: "yml"}
+	return FileContentMsg{content: hostsConfig, ext: ".yml"}
 }
 
 // editConfig opens the editor.

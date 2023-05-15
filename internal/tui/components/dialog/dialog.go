@@ -33,7 +33,9 @@ func New(c common.Common, question string, buttons []string) *Dialog {
 
 // SetSize implements common.Component.
 func (d *Dialog) SetSize(width, height int) {
-	d.common.SetSize(width, height)
+	d.common.Width = width
+	d.common.Height = height
+	// d.common.SetSize(width, height)
 }
 
 // Init implements tea.Model.

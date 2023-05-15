@@ -6,10 +6,12 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/kirychukyurii/wdeploy/internal/app/ansible"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
+	"github.com/kirychukyurii/wdeploy/internal/tui/components/dialog"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/statusbar"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
@@ -26,14 +28,16 @@ type tab int
 
 const (
 	viewTab tab = iota
+	logTab
+	//logTab
 	//testTab
 	lastTab
 )
 
 func (t tab) String() string {
 	return []string{
-		"",
-		//"Test",
+		"Deploy",
+		"Log",
 	}[t]
 }
 
@@ -68,17 +72,19 @@ func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
 	sb := statusbar.New(c)
 	ts := make([]string, lastTab)
 	// Tabs must match the order of tab constants above.
-	for i, t := range []tab{viewTab} {
+	for i, t := range []tab{viewTab, logTab} {
 		ts[i] = t.String()
 	}
 	tb := tabs.New(c, ts)
 
 	view := NewView(c, cfg, logger)
+	log := NewLog(c, cfg, logger)
 	//test := NewConfig(c, cfg, logger)
 
 	// Make sure the order matches the order of tab constants above.
 	panes := []common.Component{
 		view,
+		log,
 		//	test,
 	}
 
@@ -96,16 +102,19 @@ func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
 // SetSize implements common.Component.
 func (r *Inventory) SetSize(width, height int) {
 	r.common.SetSize(width, height)
+
 	hm := r.common.Styles.Repo.Body.GetVerticalFrameSize() +
 		r.common.Styles.Repo.Header.GetHeight() +
 		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
 		r.common.Styles.StatusBar.GetHeight()
 	r.tabs.SetSize(width, height-hm)
 	r.statusbar.SetSize(width, height-hm)
+
 	for _, p := range r.panes {
 		p.SetSize(width, height-hm)
 	}
 
+	r.logger.Zap.Debug(fmt.Sprintf("width=%d height=%d hm=%d height-hm=%d", width, height, hm, height-hm))
 }
 
 func (r *Inventory) commonHelp() []key.Binding {
@@ -134,7 +143,7 @@ func (r *Inventory) FullHelp() [][]key.Binding {
 	return b
 }
 
-// Init implements tea.View.
+// Init implements tea.Log.
 func (r *Inventory) Init() tea.Cmd {
 	return tea.Batch(
 		r.tabs.Init(),
@@ -144,9 +153,24 @@ func (r *Inventory) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	r.logger.Zap.Debugf("Inventory.Update() msg.%T=%s", msg, msg)
+
 	cmds := make([]tea.Cmd, 0)
-	r.logger.Zap.Debug(msg)
+
 	switch msg := msg.(type) {
+	case dialog.SelectDialogButtonMsg:
+		// fmt.Println(msg)
+		if msg == 0 {
+			r.activeTab = logTab
+			cmd := tabs.SelectTabCmd(int(logTab))
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+			//r.tabs.Update()
+			r.deploy()
+
+			r.logger.Zap.Debug(fmt.Sprintf("msg=%d", msg))
+		}
 	case RepoMsg:
 		r.activeTab = 0
 		r.selectedRepo = action.Action(msg) //git.GitRepo(msg)
@@ -220,7 +244,7 @@ func (r *Inventory) View() string {
 			Height(r.common.Height)
 		view := lipgloss.JoinVertical(lipgloss.Top,
 			r.headerView(),
-			r.statusbar.View(),
+			r.statusbar.Log(),
 		)
 		return s.Render(view)
 	*/
@@ -357,4 +381,14 @@ func updateStatusBarCmd() tea.Msg {
 
 func backCmd() tea.Msg {
 	return BackMsg{}
+}
+
+func (r *Inventory) deploy() error {
+	go func() {
+		executor := ansible.NewExecutor(r.cfg, r.logger)
+
+		_ = executor.RunPlaybook()
+	}()
+
+	return nil
 }
