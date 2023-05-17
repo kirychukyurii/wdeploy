@@ -17,7 +17,7 @@ require (
 	github.com/muesli/roff v0.1.0
 	github.com/muesli/termenv v0.15.1
 	github.com/spf13/cobra v1.7.0
-	go.uber.org/fx v1.19.2
+	go.uber.org/fx v1.19.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/term v0.6.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
