@@ -16,7 +16,7 @@ require (
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
 	github.com/muesli/termenv v0.15.1
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	go.uber.org/fx v1.19.2
 	go.uber.org/zap v1.23.0
 	golang.org/x/term v0.6.0
@@ -35,7 +35,7 @@ require (
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
