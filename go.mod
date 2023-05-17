@@ -6,7 +6,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/alecthomas/chroma v0.10.0
 	github.com/apenella/go-ansible v1.1.7
-	github.com/charmbracelet/bubbles v0.13.0
+	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/glamour v0.6.0
 	github.com/charmbracelet/lipgloss v0.7.1
