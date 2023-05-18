@@ -1,3 +1,0 @@
-[submodule "resources/webitel-ansible"]
-	path = resources/webitel-ansible
-	url = git@github.com:kirychukyurii/webitel-ansible.git
