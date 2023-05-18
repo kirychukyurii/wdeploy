@@ -78,7 +78,9 @@ func New() Config {
 		return config
 	}
 
-	config.PlaybookFile = fmt.Sprintf("%s/wansible", xdg.Home)
+	config.PlaybookFile = fmt.Sprintf("%s/wansible/playbook.yml", xdg.Home)
+	config.LogDirectory = fmt.Sprintf("%s/wdeploy/%s/logs/", xdg.DataHome, config.WebitelRepositoryUser)
+	xdg.DataFile(fmt.Sprintf("wdeploy/%s/logs/ansible.log", config.WebitelRepositoryUser))
 
 	return config
 }
@@ -221,7 +223,7 @@ func (c *Config) GetHostsConfigContent() (fullText string, err error) {
 func (c *Config) GetAnsibleLogContent() (fullText string, err error) {
 	var text []string
 
-	f, err := os.Open("/home/ubuntu/goland/wdeploy/logs/ansible4.log")
+	f, err := os.Open(fmt.Sprintf("%s/ansible.log", c.LogDirectory))
 	if err != nil {
 		return "", err
 	}

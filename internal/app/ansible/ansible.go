@@ -2,6 +2,7 @@ package ansible
 
 import (
 	"context"
+	"fmt"
 	"github.com/apenella/go-ansible/pkg/execute"
 	"github.com/apenella/go-ansible/pkg/execute/measure"
 	"github.com/apenella/go-ansible/pkg/options"
@@ -24,12 +25,7 @@ func NewExecutor(cfg config.Config, logger logger.Logger) Executor {
 }
 
 func (e Executor) RunPlaybook() error {
-	//w := &zapio.Writer{Log: e.logger.DesugarZap}
-	//defer w.Close()
-
-	e.logger.Zap.Debug("/home/ubuntu/goland/wdeploy/logs/ansible3.log")
-
-	f, err := os.OpenFile("/home/ubuntu/goland/wdeploy/logs/ansible4.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fmt.Sprintf("%s/ansible.log", e.cfg.LogDirectory), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	ansiblePlaybookConnectionOptions := &options.AnsibleConnectionOptions{
 		SSHCommonArgs: e.cfg.AnsibleSSHExtraArgs,
@@ -44,7 +40,6 @@ func (e Executor) RunPlaybook() error {
 		execute.NewDefaultExecute(
 			execute.WithEnvVar("ANSIBLE_FORCE_COLOR", "true"),
 			execute.WithWrite(f),
-			//execute.WithWrite(w),
 		),
 	)
 

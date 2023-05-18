@@ -194,7 +194,7 @@ func (r *Log) fileWatcher(sub chan struct{}) tea.Cmd {
 	}
 
 	// provide the file name along with path to be watched
-	err = watcher.Add("/home/ubuntu/goland/wdeploy/logs/ansible4.log")
+	err = watcher.Add(fmt.Sprintf("%s/ansible.log", r.cfg.LogDirectory))
 	if err != nil {
 		r.logger.Zap.Error(err)
 	}
