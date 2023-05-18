@@ -10,27 +10,27 @@ import (
 func init() {
 	pf := Command.PersistentFlags()
 	pf.StringVarP(&config.DefaultConfig.LogLevel, "log-level", "l",
-		"debug", "log level: debug, info, warn, error, dpanic, panic, fatal")
+		"debug", "log output level: debug, info, warn, error, dpanic, panic, fatal")
 	pf.StringVarP(&config.DefaultConfig.LogFormat, "log-format", "F",
-		"plain", "log format output: json, console")
+		"plain", "log output format: json, console")
 	pf.StringVarP(&config.DefaultConfig.LogDirectory, "log-path", "L",
-		"./", "log file location")
+		"./", "log output to this directory")
 	pf.StringVarP(&config.DefaultConfig.VarsFile, "vars", "V",
-		"", "variables file")
+		"", "specify Ansible variables file")
 	pf.StringVarP(&config.DefaultConfig.HostsFile, "inventory", "i",
-		"", "hosts file")
+		"", "specify Ansible inventory host path")
 	pf.StringVarP(&config.DefaultConfig.WebitelRepositoryUser, "user", "u",
-		"", "webitel repository user")
+		"", "specify Webitel Repository user")
 	pf.StringVarP(&config.DefaultConfig.WebitelRepositoryPassword, "password", "p",
-		"", "webitel repository password")
-	pf.StringVarP(&config.DefaultConfig.InventoryType, "type", "t",
-		"localhost", "inventory template type: localhost, custom")
+		"", "specify Webitel Repository password")
+	pf.StringVarP(&config.DefaultConfig.InventoryType, "deploy-type", "t",
+		"localhost", "specify Ansible inventory template type: localhost, custom")
 }
 
 var Command = &cobra.Command{
 	Use:          "run",
-	Short:        "Start Ansible Playbook",
-	Example:      "wdeploy run -V inventories/production/group_vars/all.yml -i inventories/production/inventory.yml",
+	Short:        "Run wdeploy TUI",
+	Example:      `wdeploy run --user "testUser" --password "testPassword" --deploy-type custom`,
 	SilenceUsage: true,
 	PreRun: func(cmd *cobra.Command, args []string) {
 
