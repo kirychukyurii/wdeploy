@@ -31,7 +31,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	PlaybookFile:  "./resources/webitel-ansible/playbook.yml",
+	PlaybookFile:  "./wansible/playbook.yml",
 	VarsFile:      "",
 	HostsFile:     "",
 	InventoryType: "custom",
@@ -77,6 +77,8 @@ func New() Config {
 
 		return config
 	}
+
+	config.PlaybookFile = fmt.Sprintf("%s/wansible", xdg.Home)
 
 	return config
 }
