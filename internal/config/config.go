@@ -79,8 +79,15 @@ func New() Config {
 	}
 
 	config.PlaybookFile = fmt.Sprintf("%s/wansible/playbook.yml", xdg.Home)
-	config.LogDirectory = fmt.Sprintf("%s/wdeploy/%s/logs/", xdg.DataHome, config.WebitelRepositoryUser)
-	xdg.DataFile(fmt.Sprintf("wdeploy/%s/logs/ansible.log", config.WebitelRepositoryUser))
+	config.LogDirectory = fmt.Sprintf("%s/wdeploy/%s/logs", xdg.DataHome, config.WebitelRepositoryUser)
+
+	ansibleLogPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/logs/ansible.log", config.WebitelRepositoryUser))
+	f, err := os.Create(ansibleLogPath)
+	defer f.Close()
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return config
 }
