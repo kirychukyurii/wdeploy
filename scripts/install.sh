@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-WDEPLOY_VERSION="0.0.1"
+WDEPLOY_VERSION="0.0.2"
 WANSIBLE_REPOSITORY=$(echo "$HOME/wansible")
 DRY_RUN=${DRY_RUN:-}
 while [ $# -gt 0 ]; do
