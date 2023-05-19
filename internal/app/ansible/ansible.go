@@ -40,6 +40,7 @@ func (e Executor) RunPlaybook() error {
 		execute.NewDefaultExecute(
 			execute.WithEnvVar("ANSIBLE_FORCE_COLOR", "true"),
 			execute.WithWrite(f),
+			execute.WithWriteError(f),
 		),
 	)
 
