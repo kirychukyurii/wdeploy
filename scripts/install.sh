@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-WDEPLOY_VERSION="0.0.3"
+WDEPLOY_VERSION="0.0.4"
 WANSIBLE_REPOSITORY=$(echo "$HOME/wansible")
 DRY_RUN=${DRY_RUN:-}
 while [ $# -gt 0 ]; do
@@ -75,7 +75,7 @@ wdeploy_clone_repo() {
     fi
 
     if [ ! -f "$WANSIBLE_REPOSITORY/playbook.yml" ]; then
-        $sh_c "git clone git@github.com:kirychukyurii/wansible.git $WANSIBLE_REPOSITORY" > /dev/null 2>&1
+        $sh_c "git clone https://github.com/kirychukyurii/wansible.git $WANSIBLE_REPOSITORY" > /dev/null 2>&1
     fi
 }
 
