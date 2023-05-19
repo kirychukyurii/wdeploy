@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/kirychukyurii/wdeploy/cmd/man"
 	"github.com/kirychukyurii/wdeploy/cmd/run"
-	"github.com/kirychukyurii/wdeploy/internal/constants"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -14,13 +14,19 @@ func init() {
 	Command.AddCommand(man.Command)
 }
 
+var (
+	version    = "0.0.0"
+	commit     = "hash"
+	commitDate = "date"
+)
+
 var Command = &cobra.Command{
 	Use:          "wdeploy",
 	Short:        "wdeploy - easily deploy Webitel for your instances",
 	SilenceUsage: true,
 	Long: `wdeploy is a application that allows you to easily deploy Webitel services on your own instances.
 Just specify needed variables and hosts configuration in TUI and take a coffee, wdeploy will do the rest for you`,
-	Version: constants.Version,
+	Version: fmt.Sprintf("%s, commit %s, date %s", version, commit, commitDate),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New(
