@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/kirychukyurii/wdeploy/internal/app"
-	"github.com/kirychukyurii/wdeploy/internal/app/ansible"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
@@ -20,13 +18,12 @@ import (
 )
 
 var Module = fx.Options(
-	lib.Module,
 	config.Module,
-	app.Module,
+	lib.Module,
 	fx.Invoke(bootstrap),
 )
 
-func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Config, ansible ansible.Executor) {
+func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Config) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logger.Zap.Info("Starting Application")
@@ -35,12 +32,6 @@ func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Confi
 				fmt.Println("403")
 				os.Exit(1)
 			}
-			/*
-				err := ansible.RunPlaybook()
-				if err != nil {
-					return err
-				}
-			*/
 
 			go func() {
 				logger.Zap.Debug("Started goroutine")
