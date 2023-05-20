@@ -1,7 +1,0 @@
----
-# Install a collection from Ansible Galaxy.
-collections:
-  - name: ansible.utils
-    source: https://galaxy.ansible.com
-
-  - name: community.rabbitmq

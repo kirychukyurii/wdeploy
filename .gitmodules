@@ -1,3 +1,0 @@
-[submodule "resources/playbook"]
-	path = resources/playbook
-	url = git@github.com:kirychukyurii/wansible.git
