@@ -17,12 +17,14 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
 )
 
+/*
 type state int
 
 const (
 	loadingState state = iota
 	loadedState
 )
+*/
 
 type tab int
 
@@ -167,7 +169,9 @@ func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 			}
 			//r.tabs.Update()
-			r.deploy()
+
+			// TODO
+			_ = r.deploy()
 
 			r.logger.Zap.Debug(fmt.Sprintf("msg=%d", msg))
 		}

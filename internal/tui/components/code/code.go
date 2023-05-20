@@ -187,16 +187,24 @@ func (r *Code) renderFile(path, content string, width int) (string, error) {
 	// width depends on the terminal. This is a workaround to replace tabs with
 	// 4-spaces.
 	content = strings.ReplaceAll(content, "\t", strings.Repeat(" ", tabWidth))
-	lexer := lexers.Fallback
-	if path == "" {
-		lexer = lexers.Analyse(content)
-	} else {
+	// lexer := lexers.Fallback
+	lexer := lexers.Analyse(content)
+	if path != "" {
 		lexer = lexers.Match(path)
 	}
+	/*
+		if path == "" {
+			lexer = lexers.Analyse(content)
+		} else {
+			lexer = lexers.Match(path)
+		}
+	*/
+
 	lang := ""
 	if lexer != nil && lexer.Config() != nil {
 		lang = lexer.Config().Name
 	}
+
 	var c string
 	if lang == "markdown" {
 		md, err := r.glamourize(width, content)

@@ -8,7 +8,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/config"
-	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	tview "github.com/kirychukyurii/wdeploy/internal/templates/view"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
@@ -23,7 +22,7 @@ type ReadmeMsg struct{}
 // FileContentMsg is a message that contains the content of a file.
 type FileContentMsg struct {
 	content string
-	ext     string
+	// ext     string
 }
 
 // View is the readme component page.
@@ -35,7 +34,7 @@ type View struct {
 	spinner        spinner.Model
 	currentContent FileContentMsg
 	lineNumber     bool
-	path           string
+	// path           string
 
 	cfg    config.Config
 	logger logger.Logger
@@ -183,6 +182,7 @@ func (r *View) StatusBarBranch() string {
 	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
 }
 
+/*
 func (r *View) updateFileContent() tea.Msg {
 	hostsConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.InventoryConfig])
 	if err != nil {
@@ -195,3 +195,4 @@ func (r *View) updateFileContent() tea.Msg {
 
 	return FileContentMsg{content: hostsConfig, ext: ".yml"}
 }
+*/

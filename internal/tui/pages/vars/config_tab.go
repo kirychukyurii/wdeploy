@@ -36,7 +36,7 @@ type Readme struct {
 	repo           action.Action
 	currentContent FileContentMsg
 	lineNumber     bool
-	path           string
+	// path           string
 
 	cfg    config.Config
 	logger logger.Logger

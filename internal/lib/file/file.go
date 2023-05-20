@@ -92,7 +92,11 @@ func ReadFileContent(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer Close(f)
+	defer func(fd *os.File) {
+		if tempErr := Close(fd); tempErr != nil {
+			err = tempErr
+		}
+	}(f)
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {

@@ -11,7 +11,7 @@ type Spinner struct {
 	common   common.Common
 	spinner  spinner.Model
 	quitting bool
-	err      error
+	// err      error // TODO
 }
 
 func New(c common.Common, quitting bool) *Spinner {

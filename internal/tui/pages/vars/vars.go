@@ -15,12 +15,14 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
 )
 
+/*
 type state int
 
 const (
 	loadingState state = iota
 	loadedState
 )
+*/
 
 type tab int
 

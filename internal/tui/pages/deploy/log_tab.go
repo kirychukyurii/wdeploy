@@ -20,7 +20,7 @@ type LogMsg struct{}
 // LogContentMsg is a message that contains the content of a file.
 type LogContentMsg struct {
 	content string
-	ext     string
+	// ext     string
 }
 
 // Log is the readme component page.
@@ -31,7 +31,7 @@ type Log struct {
 	spinner        spinner.Model
 	currentContent LogContentMsg
 	lineNumber     bool
-	path           string
+	// path           string
 
 	sub chan struct{} // where we'll receive activity notifications
 
@@ -177,6 +177,7 @@ func (r *Log) StatusBarBranch() string {
 	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
 }
 
+/*
 func (r *Log) initSpinner() tea.Cmd {
 	return r.spinner.Tick
 }
@@ -186,6 +187,7 @@ func (r *Log) deployWebitel() tea.Cmd {
 
 	return nil
 }
+*/
 
 func (r *Log) fileWatcher(sub chan struct{}) tea.Cmd {
 	r.logger.Zap.Debug("setup watcher")
@@ -205,9 +207,8 @@ func (r *Log) fileWatcher(sub chan struct{}) tea.Cmd {
 	return func() tea.Msg {
 		defer func(watcher *fsnotify.Watcher) {
 			r.logger.Zap.Debug("close watcher")
-			err := watcher.Close()
-			if err != nil {
-
+			if tempErr := watcher.Close(); tempErr != nil {
+				err = tempErr
 			}
 		}(watcher)
 

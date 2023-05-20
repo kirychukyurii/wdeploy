@@ -293,8 +293,10 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		ui.showFooter = true
 		return ui, nil
 
-	case selector.SelectMsg:
+		/* case selector.SelectMsg:
 		ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
+	
+		*/
 		/*
 			case selector.SelectMsg:
 				switch msg.IdentifiableItem.(type) {
