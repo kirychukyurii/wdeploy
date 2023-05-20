@@ -10,7 +10,10 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"os"
+	"path/filepath"
 )
+
+var playbookFileName = "playbook.yml"
 
 type Executor struct {
 	cfg    config.Config
@@ -45,7 +48,7 @@ func (e Executor) RunPlaybook() error {
 	)
 
 	pb := &playbook.AnsiblePlaybookCmd{
-		Playbooks:         []string{e.cfg.PlaybookFile},
+		Playbooks:         []string{filepath.Join(e.cfg.PlaybookTempDir, playbookFileName)},
 		ConnectionOptions: ansiblePlaybookConnectionOptions,
 		Options:           ansiblePlaybookOptions,
 		Exec:              executorTimeMeasurement,

@@ -52,6 +52,11 @@ func Remove(name string) error {
 	return os.Remove(name)
 }
 
+// RemoveAll files
+func RemoveAll(directory string) error {
+	return os.RemoveAll(directory)
+}
+
 // Close fd
 func Close(fd *os.File) error {
 	return fd.Close()
@@ -60,4 +65,14 @@ func Close(fd *os.File) error {
 // EnsureDir mkdir dir if not exist
 func EnsureDir(fp string) error {
 	return os.MkdirAll(fp, os.ModePerm)
+}
+
+// CreateTempDir creates a temporary folder with defined pattern
+func CreateTempDir(pattern string) (string, error) {
+	tempDir, err := os.MkdirTemp("", pattern)
+	if err != nil {
+		return "", err
+	}
+
+	return tempDir, nil
 }

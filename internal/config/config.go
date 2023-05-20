@@ -21,20 +21,23 @@ var Module = fx.Options(
 )
 
 type Config struct {
-	PlaybookFile  string
-	VarsFile      string
-	HostsFile     string
-	InventoryType string
+	PlaybookRepositoryUrl string
+	PlaybookTempDir       string
+	PlaybookFile          string
+	VarsFile              string
+	HostsFile             string
+	InventoryType         string
 	LoggerConfig
 	Variables
 	Inventory
 }
 
 var DefaultConfig = Config{
-	PlaybookFile:  "./wansible/playbook.yml",
-	VarsFile:      "",
-	HostsFile:     "",
-	InventoryType: "custom",
+	PlaybookRepositoryUrl: "https://github.com/kirychukyurii/wansible",
+	PlaybookFile:          "./wansible/playbook.yml",
+	VarsFile:              "",
+	HostsFile:             "",
+	InventoryType:         "custom",
 	LoggerConfig: LoggerConfig{
 		LogLevel:     "info",
 		LogFormat:    "console",
