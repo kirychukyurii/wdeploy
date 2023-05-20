@@ -29,6 +29,9 @@ func NewExecutor(cfg config.Config, logger logger.Logger) Executor {
 
 func (e Executor) RunPlaybook() error {
 	f, err := os.OpenFile(fmt.Sprintf("%s/ansible.log", e.cfg.LogDirectory), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		e.logger.Zap.Error(err)
+	}
 
 	ansiblePlaybookConnectionOptions := &options.AnsibleConnectionOptions{
 		SSHCommonArgs: e.cfg.AnsibleSSHExtraArgs,

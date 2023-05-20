@@ -28,7 +28,7 @@ var Module = fx.Options(
 func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Config) {
 	var err error
 
-	tempDirPattern := regexp.MustCompile(".*\\/(.*)").FindStringSubmatch(config.PlaybookRepositoryUrl)
+	tempDirPattern := regexp.MustCompile(`.*/(.*)`).FindStringSubmatch(config.PlaybookRepositoryUrl)
 	config.PlaybookTempDir, err = file.CreateTempDir(fmt.Sprintf("%s-", tempDirPattern[1]))
 	if err != nil {
 		logger.Zap.Fatal(err)
