@@ -8,7 +8,7 @@ before:
     - go mod tidy
 
 snapshot:
-  name_template: '{{ incpatch .Version }}-next'
+  name_template: 'SNAPSHOT-{{ .Commit }}'
 
 report_sizes: true
 
@@ -43,7 +43,7 @@ universal_binaries:
   - replace: false
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: '{{ .ProjectName }}-{{ .Version }}-checksums.txt'
 
 changelog:
   sort: asc
@@ -80,13 +80,7 @@ changelog:
       order: 9999
 
 archives:
-  - name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+  - name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     format_overrides:
       - goos: windows
         format: zip
