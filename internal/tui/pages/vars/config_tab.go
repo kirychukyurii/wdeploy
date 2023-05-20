@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kirychukyurii/wdeploy/internal/config"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
@@ -127,8 +128,12 @@ func (r *Readme) FullHelp() [][]key.Binding {
 
 // Init implements tea.Model.
 func (r *Readme) Init() tea.Cmd {
-	varsConfig, err := r.cfg.GetVarsConfigContent()
+	varsConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.VarsConfig])
 	if err != nil {
+		return nil
+	}
+
+	if err = r.cfg.ReadToStruct(config.VarsConfig); err != nil {
 		return nil
 	}
 
@@ -186,7 +191,7 @@ func (r *Readme) View() string {
 
 // StatusBarValue implements statusbar.StatusBar.
 func (r *Readme) StatusBarValue() string {
-	p := r.cfg.VarsFile
+	p := r.cfg.ConfigFiles[config.VarsConfig]
 	if p == "." {
 		return ""
 	}
@@ -204,8 +209,12 @@ func (r *Readme) StatusBarBranch() string {
 }
 
 func (r *Readme) updateFileContent() tea.Msg {
-	varsConfig, err := r.cfg.GetVarsConfigContent()
+	varsConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.VarsConfig])
 	if err != nil {
+		return nil
+	}
+
+	if err = r.cfg.ReadToStruct(config.VarsConfig); err != nil {
 		return nil
 	}
 
@@ -214,7 +223,7 @@ func (r *Readme) updateFileContent() tea.Msg {
 
 // editConfig opens the editor.
 func (r *Readme) editConfig() tea.Cmd {
-	return tea.ExecProcess(editor.Cmd(r.cfg.VarsFile), func(err error) tea.Msg {
+	return tea.ExecProcess(editor.Cmd(r.cfg.ConfigFiles[config.VarsConfig]), func(err error) tea.Msg {
 		return r.updateFileContent()
 	})
 }

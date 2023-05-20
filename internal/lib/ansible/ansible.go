@@ -35,8 +35,8 @@ func (e Executor) RunPlaybook() error {
 	}
 
 	ansiblePlaybookOptions := &playbook.AnsiblePlaybookOptions{
-		Inventory:     e.cfg.HostsFile,
-		ExtraVarsFile: []string{fmt.Sprintf("@%s", e.cfg.VarsFile)},
+		Inventory:     e.cfg.ConfigFiles[config.InventoryConfig],
+		ExtraVarsFile: []string{fmt.Sprintf("@%s", e.cfg.ConfigFiles[config.VarsConfig])},
 	}
 
 	executorTimeMeasurement := measure.NewExecutorTimeMeasurement(

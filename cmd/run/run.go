@@ -15,9 +15,9 @@ func init() {
 		"plain", "log output format: json, console")
 	pf.StringVarP(&config.DefaultConfig.LogDirectory, "log-path", "L",
 		"./", "log output to this directory")
-	pf.StringVarP(&config.DefaultConfig.VarsFile, "vars", "V",
+	pf.StringVarP(&config.DefaultConfig.ConfigFiles[config.VarsConfig], "vars", "V",
 		"", "specify Ansible variables file")
-	pf.StringVarP(&config.DefaultConfig.HostsFile, "inventory", "i",
+	pf.StringVarP(&config.DefaultConfig.ConfigFiles[config.InventoryConfig], "inventory", "i",
 		"", "specify Ansible inventory host path")
 	pf.StringVarP(&config.DefaultConfig.WebitelRepositoryUser, "user", "u",
 		"", "specify Webitel Repository user")
@@ -32,9 +32,7 @@ var Command = &cobra.Command{
 	Short:        "Run wdeploy TUI",
 	Example:      `wdeploy run --user "testUser" --password "testPassword" --deploy-type custom`,
 	SilenceUsage: true,
-	PreRun: func(cmd *cobra.Command, args []string) {
-
-	},
+	PreRun:       func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
 		runApplication()
 	},

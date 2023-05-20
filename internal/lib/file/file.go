@@ -1,8 +1,10 @@
 package file
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -47,6 +49,11 @@ func Create(name string) (*os.File, error) {
 	return os.Create(name)
 }
 
+// Open one file
+func Open(name string) (*os.File, error) {
+	return os.Open(name)
+}
+
 // Remove one file
 func Remove(name string) error {
 	return os.Remove(name)
@@ -75,4 +82,27 @@ func CreateTempDir(pattern string) (string, error) {
 	}
 
 	return tempDir, nil
+}
+
+// ReadFileContent read file content in string
+func ReadFileContent(name string) (string, error) {
+	var text []string
+
+	f, err := Open(name)
+	if err != nil {
+		return "", err
+	}
+	defer Close(f)
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		text = append(text, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	fullText := strings.Join(text, "\n")
+
+	return fullText, nil
 }

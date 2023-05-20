@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fsnotify/fsnotify"
 	"github.com/kirychukyurii/wdeploy/internal/config"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
@@ -100,8 +101,7 @@ func (r *Log) FullHelp() [][]key.Binding {
 
 // Init implements tea.Model.
 func (r *Log) Init() tea.Cmd {
-	r.logger.Zap.Debugf("(r *Log) Init()=%s", r.currentContent)
-	r.currentContent.content, _ = r.cfg.GetAnsibleLogContent()
+	r.currentContent.content, _ = file.ReadFileContent(r.cfg.GetAnsibleLogLocation())
 
 	r.code.GotoBottom()
 
@@ -130,7 +130,8 @@ func (r *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case LogMsg:
 		r.logger.Zap.Debug(fmt.Sprintf("Log.Update().LogContentMsg: %s", msg))
-		r.currentContent.content, _ = r.cfg.GetAnsibleLogContent()
+		r.currentContent.content, _ = file.ReadFileContent(r.cfg.GetAnsibleLogLocation())
+
 		r.code.SetContent(r.currentContent.content, ".yml")
 		r.code.GotoBottom()
 		cmds = append(cmds, r.waitForActivity(r.sub), updateStatusBarCmd)

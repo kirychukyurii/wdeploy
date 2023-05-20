@@ -8,13 +8,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/kirychukyurii/wdeploy/internal/config"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	tview "github.com/kirychukyurii/wdeploy/internal/templates/view"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/code"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/dialog"
-	"github.com/kirychukyurii/wdeploy/internal/tui/components/editor"
 	"text/template"
 )
 
@@ -184,27 +184,14 @@ func (r *View) StatusBarBranch() string {
 }
 
 func (r *View) updateFileContent() tea.Msg {
-	hostsConfig, err := r.cfg.GetHostsConfigContent()
+	hostsConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.InventoryConfig])
 	if err != nil {
 		return nil
 	}
 
+	if err = r.cfg.ReadToStruct(config.InventoryConfig); err != nil {
+		return nil
+	}
+
 	return FileContentMsg{content: hostsConfig, ext: ".yml"}
-}
-
-// editConfig opens the editor.
-func (r *View) editConfig() tea.Cmd {
-	return tea.ExecProcess(editor.Cmd(r.cfg.VarsFile), func(err error) tea.Msg {
-		return r.updateFileContent()
-	})
-}
-
-func (r *View) initSpinner() tea.Cmd {
-	return r.spinner.Tick
-}
-
-func (r *View) deployWebitel() tea.Cmd {
-	r.initSpinner()
-
-	return nil
 }

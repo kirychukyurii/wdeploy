@@ -1,0 +1,92 @@
+---
+- tags:
+    - always
+  block:
+    - name: "Preflight : Create dynamic groups based on the selected services"
+      ansible.builtin.group_by:
+        key: "{{ item }}"
+      with_items: "{{ hostvars[inventory_hostname].webitel_services | list }}"
+
+    - name: "Preflight : Fail when deploy Consul on more than one host"
+      fail:
+        msg: "Please specify only one host for Consul in inventory"
+      when:
+        - groups['consul'] | length > 1
+
+    - name: "Preflight : Fail when deploy RabbitMQ on more than one host"
+      fail:
+        msg: "Please specify only one host for RabbitMQ in inventory"
+      when:
+        - groups['rabbitmq'] | length > 1
+
+    - name: "Preflight : Fail when deploy RTPEngine on more than one host"
+      fail:
+        msg: "Please specify only one host for RTPEngine in inventory"
+      when:
+        - groups['rtpengine'] | length > 1
+
+    - name: "Preflight : Fail when deploy OpenSIPs on more than one host"
+      fail:
+        msg: "Please specify only one host for OpenSIPs in inventory"
+      when:
+        - groups['opensips'] | length > 1
+
+    - name: "Preflight : Fail when deploy main PostgreSQL database on more than one host"
+      fail:
+        msg: "Please specify only one host for main PostgreSQL database in inventory"
+      when:
+        - groups['postgresql_main'] | length > 1
+
+    - name: "Preflight : Fail when RTPEngine mode isn't set"
+      fail:
+        msg: "Please specify RTPEngine running mode (rtpengine_mode)"
+      when:
+        - rtpengine_mode == '' or
+          rtpengine_mode is not defined
+
+    - name: "Preflight : Fail when Signalware FreeSWITCH API key isn't set"
+      fail:
+        msg: "Please specify Signalware FreeSWITCH API key (freeswitch_signalwire_key)"
+      when:
+        - freeswitch_signalwire_key == '' or
+          freeswitch_signalwire_key is not defined
+
+    - name: "Preflight : Fail when Signalware FreeSWITCH API key set to default"
+      fail:
+        msg: "Please specify correct Signalware FreeSWITCH API key (freeswitch_signalwire_key)"
+      when:
+        - freeswitch_signalwire_key == 'pat_XXXXX'
+
+    - name: "Preflight : Fail on incorrect variable types in opensips definitions"
+      fail:
+        msg: "Boolean variables in opensips.fail2ban shouldn't be passed as strings. Please remove unneeded apostrophes."
+      when: opensips.fail2ban is defined and opensips.fail2ban is string
+
+    - name: "Preflight : Fail when language for basic dashboards isn't set"
+      fail:
+        msg: "Please specify language for basic dashboards (grafana_basic_dashboards_language)"
+      when:
+        - grafana_basic_dashboards | bool
+        - grafana_basic_dashboards_language == '' or
+          grafana_basic_dashboards_language is not defined
+
+    - name: "Preflight : Fail on incorrect variable types in LetsEncrypt definitions"
+      fail:
+        msg: "Boolean variables in nginx_letsencrypt shouldn't be passed as strings. Please remove unneeded apostrophes."
+      when: nginx_letsencrypt is defined and nginx_letsencrypt is string
+
+    - name: "Preflight : Fail when site name isn't set with enabled LetsEncrypt"
+      fail:
+        msg: "Please specify site name for obtaining LetsEncrypt certificate (nginx_site_name)"
+      when:
+        - nginx_letsencrypt | bool
+        - nginx_site_name == '' or
+          nginx_site_name is not defined
+
+    - name: "Preflight : Fail when mail address isn't set with enabled LetsEncrypt"
+      fail:
+        msg: "Please specify mail address for LetsEncrypt (nginx_mail_address)"
+      when:
+        - nginx_letsencrypt | bool
+        - nginx_mail_address == '' or
+          nginx_mail_address is not defined

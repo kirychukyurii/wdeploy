@@ -1,18 +1,17 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/adrg/xdg"
+	"github.com/kirychukyurii/wdeploy/internal/constants"
 	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/custom"
 	"github.com/kirychukyurii/wdeploy/internal/templates/inventory/localhost"
 	"github.com/kirychukyurii/wdeploy/internal/templates/vars"
 	"go.uber.org/fx"
 	"gopkg.in/yaml.v3"
-	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"text/template"
 )
 
@@ -20,12 +19,16 @@ var Module = fx.Options(
 	fx.Provide(New),
 )
 
+const (
+	VarsConfig int = iota
+	InventoryConfig
+	lastsConfig
+)
+
 type Config struct {
 	PlaybookRepositoryUrl string
 	PlaybookTempDir       string
-	PlaybookFile          string
-	VarsFile              string
-	HostsFile             string
+	ConfigFiles           []string
 	InventoryType         string
 	LoggerConfig
 	Variables
@@ -34,9 +37,7 @@ type Config struct {
 
 var DefaultConfig = Config{
 	PlaybookRepositoryUrl: "https://github.com/kirychukyurii/wansible",
-	PlaybookFile:          "./wansible/playbook.yml",
-	VarsFile:              "",
-	HostsFile:             "",
+	ConfigFiles:           make([]string, 2),
 	InventoryType:         "custom",
 	LoggerConfig: LoggerConfig{
 		LogLevel:     "info",
@@ -51,203 +52,111 @@ var DefaultConfig = Config{
 
 func New() Config {
 	config := DefaultConfig
+	home := config.getUserLocalHome()
 
-	if config.VarsFile == "" {
-		config.VarsFile = getConfigPath("vars", config.WebitelRepositoryUser)
-	}
-	if config.HostsFile == "" {
-		config.HostsFile = getConfigPath("hosts", config.WebitelRepositoryUser)
-	}
+	configFilesType := make(map[int]string, lastsConfig)
+	configFilesType[VarsConfig] = "vars"
+	configFilesType[InventoryConfig] = "inventory"
 
-	fmt.Println(config.VarsFile)
-	fmt.Println(config.HostsFile)
+	for i, v := range config.ConfigFiles {
+		if v == "" {
+			if err := file.EnsureDir(filepath.Join(home, configFilesType[i])); err != nil {
+				fmt.Println("file.EnsureDir(): " + err.Error())
+			}
 
-	if !file.IsFile(config.VarsFile) {
-		config = createVarsConfigFromTpl(config)
-	}
+			config.ConfigFiles[i] = filepath.Join(home, configFilesType[i], "all.yml")
+			fmt.Printf("%s: %s\n", configFilesType[i], config.ConfigFiles[i])
+		}
 
-	if err := config.readVarsToStruct(); err != nil {
-		fmt.Println(err)
-		return config
-	}
+		if !file.IsFile(config.ConfigFiles[i]) {
+			if err := config.createConfigFromTpl(i); err != nil {
+				fmt.Println("config.createConfigFromTpl(i): " + err.Error())
+			}
+		}
 
-	if !file.IsFile(config.HostsFile) {
-		config = createHostsConfigFromTpl(config)
-	}
-
-	if err := config.readHostsToStruct(); err != nil {
-		fmt.Println(err)
-
-		return config
+		if err := config.ReadToStruct(i); err != nil {
+			fmt.Println("config.ReadToStruct(i): ", err.Error())
+		}
 	}
 
-	config.PlaybookFile = fmt.Sprintf("%s/wansible/playbook.yml", xdg.Home)
-	config.LogDirectory = fmt.Sprintf("%s/wdeploy/%s/logs", xdg.DataHome, config.WebitelRepositoryUser)
-
-	ansibleLogPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/logs/ansible.log", config.WebitelRepositoryUser))
-	f, err := os.Create(ansibleLogPath)
-	defer f.Close()
-
-	if err != nil {
-		fmt.Println(err)
+	config.LogDirectory = filepath.Join(home, "logs")
+	if err := file.EnsureDir(config.LogDirectory); err != nil {
+		fmt.Println("file.EnsureDir(): " + err.Error())
 	}
 
-	return config
-}
+	ansibleLogLocation := config.GetAnsibleLogLocation()
 
-func createVarsConfigFromTpl(config Config) Config {
-	cfgPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/vars/vars.yml", config.WebitelRepositoryUser))
-	if err != nil {
-		fmt.Println(err)
-	}
+	if !file.IsFile(ansibleLogLocation) {
+		f, err := file.Create(ansibleLogLocation)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	tpl, err := template.New("").Parse(vars.Tmpl)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	f, err := os.Create(cfgPath)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = tpl.Execute(f, config)
-	if err != nil {
-		fmt.Println(err)
+		defer file.Close(f)
 	}
 
 	return config
 }
 
-func createHostsConfigFromTpl(config Config) Config {
-	cfgPath, err := xdg.DataFile(fmt.Sprintf("wdeploy/%s/hosts/hosts.yml", config.WebitelRepositoryUser))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	hostsTpl := custom.Tmpl
-	if config.InventoryType == "local" {
-		hostsTpl = localhost.Tmpl
-	}
-
-	tpl, err := template.New("").Parse(hostsTpl)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	f, err := os.Create(cfgPath)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = tpl.Execute(f, config)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return config
+func (c *Config) getUserLocalHome() string {
+	trimUser := regexp.MustCompile("[^a-zA-Z0-9]+").ReplaceAllString(c.WebitelRepositoryUser, "")
+	return filepath.Join(xdg.DataHome, constants.AppName, trimUser)
 }
 
-func getConfigPath(cfgType, user string) (cfgPath string) {
-	return filepath.Join(xdg.DataHome, fmt.Sprintf("wdeploy/%s/%s/%s.yml", user, cfgType, cfgType))
-}
+func (c *Config) createConfigFromTpl(configFileType int) error {
+	var tmpl string
 
-func (c *Config) readVarsToStruct() error {
-	f, err := os.Open(c.VarsFile)
+	switch configFileType {
+	case VarsConfig:
+		tmpl = vars.Tmpl
+	case InventoryConfig:
+		if c.InventoryType == "local" {
+			tmpl = localhost.Tmpl
+		} else {
+			tmpl = custom.Tmpl
+		}
+	}
+
+	t, err := template.New("").Parse(tmpl)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	if err := yaml.NewDecoder(f).Decode(&c.Variables); err != nil {
+	f, err := file.Create(c.ConfigFiles[configFileType])
+	defer file.Close(f)
+	if err != nil {
+		return err
+	}
+
+	err = t.Execute(f, c)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Config) readHostsToStruct() error {
-	f, err := os.Open(c.HostsFile)
+func (c *Config) GetAnsibleLogLocation() string {
+	return filepath.Join(c.LogDirectory, "ansible.log")
+}
+
+func (c *Config) ReadToStruct(configFileType int) error {
+	f, err := file.Open(c.ConfigFiles[configFileType])
+	defer file.Close(f)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	if err := yaml.NewDecoder(f).Decode(&c.Inventory); err != nil {
-		return err
+	switch configFileType {
+	case VarsConfig:
+		if err = yaml.NewDecoder(f).Decode(&c.Variables); err != nil {
+			return err
+		}
+	case InventoryConfig:
+		if err = yaml.NewDecoder(f).Decode(&c.Inventory); err != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-func (c *Config) GetVarsConfigContent() (fullText string, err error) {
-	var text []string
-
-	f, err := os.Open(c.VarsFile)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		text = append(text, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	fullText = strings.Join(text, "\n")
-	if err := c.readVarsToStruct(); err != nil {
-		return "", err
-	}
-
-	return fullText, nil
-}
-
-func (c *Config) GetHostsConfigContent() (fullText string, err error) {
-	var text []string
-
-	f, err := os.Open(c.HostsFile)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		text = append(text, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	fullText = strings.Join(text, "\n")
-	if err := c.readHostsToStruct(); err != nil {
-		return "", err
-	}
-
-	return fullText, nil
-}
-
-func (c *Config) GetAnsibleLogContent() (fullText string, err error) {
-	var text []string
-
-	f, err := os.Open(fmt.Sprintf("%s/ansible.log", c.LogDirectory))
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		text = append(text, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	fullText = strings.Join(text, "\n")
-
-	return fullText, nil
 }

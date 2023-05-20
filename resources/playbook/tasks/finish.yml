@@ -1,0 +1,26 @@
+---
+- tags:
+    - always
+  block:
+    - when: inventory_hostname in groups['nginx']
+      block:
+        - name: "Finish : Get an identifier of the server"
+          ansible.builtin.uri:
+            url: http://{{ hostvars[groups[ "nginx" ][0]]["ansible_default_ipv4"]["address"] }}/api/srvinfo
+            return_content: true
+          register: webitel_server_key
+          when: nginx_letsencrypt is false
+
+        - name: "Finish : Get an identifier of the server"
+          ansible.builtin.uri:
+            url: https://{{ nginx_site_name }}/api/srvinfo
+            return_content: true
+          register: webitel_server_key
+          when: nginx_letsencrypt is true
+
+        - name: "Finish : All things done"
+          ansible.builtin.debug:
+            msg:
+              - "A license is given for the unique installation."
+              - "To receive the license, you need to copy an identifier of the server bellow and create a request on the Support Portal:"
+              - "{{ webitel_server_key.content }}"

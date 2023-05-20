@@ -1,0 +1,29 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  any_errors_fatal: true
+  pre_tasks:
+    - include: tasks/debian.yml
+    - include: tasks/preflight.yml
+    - include: tasks/setup.yml
+  roles:
+    - webitel/common
+    - consul
+    - rabbitmq
+    - postgresql/install
+    - postgresql/main
+    - postgresql/standby
+    - grafana
+    - nginx/install
+    - freeswitch
+    - rtpengine
+    - opensips
+    - webitel/core
+    - webitel/storage
+    - webitel/engine
+    - webitel/call_center
+    - webitel/flow_manager
+    - webitel/messages
+  post_tasks:
+    - include: tasks/finish.yml

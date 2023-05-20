@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kirychukyurii/wdeploy/internal/config"
+	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
 	"github.com/kirychukyurii/wdeploy/internal/tui/common"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/action"
@@ -127,15 +128,18 @@ func (r *Config) FullHelp() [][]key.Binding {
 
 // Init implements tea.Model.
 func (r *Config) Init() tea.Cmd {
-
-	hostsConfig, err := r.cfg.GetHostsConfigContent()
+	inventoryConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.InventoryConfig])
 	if err != nil {
+		return nil
+	}
+
+	if err = r.cfg.ReadToStruct(config.InventoryConfig); err != nil {
 		return nil
 	}
 
 	r.code.GotoTop()
 	return tea.Batch(
-		r.code.SetContent(hostsConfig, "yml"),
+		r.code.SetContent(inventoryConfig, "yml"),
 	)
 }
 
@@ -187,7 +191,7 @@ func (r *Config) View() string {
 
 // StatusBarValue implements statusbar.StatusBar.
 func (r *Config) StatusBarValue() string {
-	p := r.cfg.HostsFile
+	p := r.cfg.ConfigFiles[config.InventoryConfig]
 	if p == "." {
 		return ""
 	}
@@ -205,8 +209,12 @@ func (r *Config) StatusBarBranch() string {
 }
 
 func (r *Config) updateFileContent() tea.Msg {
-	hostsConfig, err := r.cfg.GetHostsConfigContent()
+	hostsConfig, err := file.ReadFileContent(r.cfg.ConfigFiles[config.InventoryConfig])
 	if err != nil {
+		return nil
+	}
+
+	if err = r.cfg.ReadToStruct(config.InventoryConfig); err != nil {
 		return nil
 	}
 
@@ -215,7 +223,7 @@ func (r *Config) updateFileContent() tea.Msg {
 
 // editConfig opens the editor.
 func (r *Config) editConfig() tea.Cmd {
-	return tea.ExecProcess(editor.Cmd(r.cfg.HostsFile), func(err error) tea.Msg {
+	return tea.ExecProcess(editor.Cmd(r.cfg.ConfigFiles[config.InventoryConfig]), func(err error) tea.Msg {
 		return r.updateFileContent()
 	})
 }
