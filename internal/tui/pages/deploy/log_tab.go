@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/fsnotify/fsnotify"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib/file"
 	"github.com/kirychukyurii/wdeploy/internal/lib/logger"
@@ -15,7 +14,10 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/code"
 )
 
-type LogMsg struct{}
+type LogMsg struct {
+	message string
+	sub     chan string
+}
 
 // LogContentMsg is a message that contains the content of a file.
 type LogContentMsg struct {
@@ -33,7 +35,7 @@ type Log struct {
 	lineNumber     bool
 	// path           string
 
-	sub chan struct{} // where we'll receive activity notifications
+	sub chan string // where we'll receive activity notifications
 
 	cfg    config.Config
 	logger logger.Logger
@@ -45,7 +47,7 @@ func NewLog(common common.Common, cfg config.Config, logger logger.Logger) *Log 
 	s.Spinner = spinner.Dot
 
 	f := &Log{
-		sub:        make(chan struct{}),
+		sub:        make(chan string),
 		common:     common,
 		code:       code.New(common, "", ""),
 		spinner:    s,
@@ -102,20 +104,15 @@ func (r *Log) FullHelp() [][]key.Binding {
 // Init implements tea.Model.
 func (r *Log) Init() tea.Cmd {
 	r.currentContent.content, _ = file.ReadFileContent(r.cfg.GetAnsibleLogLocation())
-
 	r.code.GotoBottom()
 
 	return tea.Batch(
 		r.code.SetContent(r.currentContent.content, ".yml"),
-		r.fileWatcher(r.sub),
-		r.waitForActivity(r.sub), // wait for activity
 	)
 }
 
 // Update implements tea.Model.
 func (r *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	r.logger.Zap.Debugf("Log.Update() msg.%T=%s", msg, msg)
-
 	cmds := make([]tea.Cmd, 0)
 
 	switch msg := msg.(type) {
@@ -129,12 +126,10 @@ func (r *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case LogMsg:
-		r.logger.Zap.Debug(fmt.Sprintf("Log.Update().LogContentMsg: %s", msg))
-		r.currentContent.content, _ = file.ReadFileContent(r.cfg.GetAnsibleLogLocation())
-
+		r.currentContent.content += fmt.Sprintln(msg.message)
 		r.code.SetContent(r.currentContent.content, ".yml")
 		r.code.GotoBottom()
-		cmds = append(cmds, r.waitForActivity(r.sub), updateStatusBarCmd)
+		cmds = append(cmds, waitForActivity(msg.sub))
 
 	case RepoMsg:
 		r.repo = action.Action(msg)
@@ -175,65 +170,4 @@ func (r *Log) StatusBarInfo() string {
 // StatusBarBranch implements statusbar.StatusBar.
 func (r *Log) StatusBarBranch() string {
 	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
-}
-
-/*
-func (r *Log) initSpinner() tea.Cmd {
-	return r.spinner.Tick
-}
-
-func (r *Log) deployWebitel() tea.Cmd {
-	r.initSpinner()
-
-	return nil
-}
-*/
-
-func (r *Log) fileWatcher(sub chan struct{}) tea.Cmd {
-	r.logger.Zap.Debug("setup watcher")
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		r.logger.Zap.Error(err)
-	}
-
-	// provide the file name along with path to be watched
-	err = watcher.Add(fmt.Sprintf("%s/ansible.log", r.cfg.LogDirectory))
-	if err != nil {
-		r.logger.Zap.Error(err)
-	}
-
-	// done := make(chan bool)
-	// use goroutine to start the watcher
-	return func() tea.Msg {
-		defer func(watcher *fsnotify.Watcher) {
-			r.logger.Zap.Debug("close watcher")
-			if tempErr := watcher.Close(); tempErr != nil {
-				err = tempErr
-			}
-		}(watcher)
-
-		for {
-			select {
-			case event := <-watcher.Events:
-				// monitor only for write events
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					sub <- struct{}{}
-
-					r.logger.Zap.Debug(fmt.Sprintf("Modified file: %s", event.Name))
-				}
-			case err := <-watcher.Errors:
-				if err != nil {
-					r.logger.Zap.Error(err)
-				}
-			}
-		}
-	}
-
-}
-
-// A command that waits for the activity on a channel.
-func (r *Log) waitForActivity(sub chan struct{}) tea.Cmd {
-	return func() tea.Msg {
-		return LogMsg(<-sub)
-	}
 }

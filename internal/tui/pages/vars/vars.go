@@ -147,7 +147,6 @@ func (r *Repo) Init() tea.Cmd {
 // Update implements tea.Model.
 func (r *Repo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
-	r.logger.Zap.Debug(msg)
 	switch msg := msg.(type) {
 	case RepoMsg:
 		r.activeTab = 0

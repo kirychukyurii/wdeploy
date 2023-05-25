@@ -187,9 +187,9 @@ func (ui *UI) IsFiltering() bool {
 
 // Update implements tea.Model.
 func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := make([]tea.Cmd, 0)
 	ui.logger.Zap.Debugf("Update() msg.%T=%s", msg, msg)
 
+	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		ui.SetSize(msg.Width, msg.Height)
@@ -202,8 +202,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.KeyMsg, tea.MouseMsg:
-		ui.logger.Zap.Debugf("Update() msg.%T=%s", msg, msg)
-		ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch {
@@ -219,7 +217,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if !ui.IsFiltering() {
 					// Stop bubble-zone background workers.
 					ui.common.Zone.Close()
-					ui.logger.Zap.Debug("Update() received a quit command")
 
 					return ui, tea.Quit
 				}
@@ -248,8 +245,6 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case footer.ToggleFooterMsg:
-		ui.logger.Zap.Debugf("Update() msg.%T=%s", msg, msg)
-		ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 		ui.footer.SetShowAll(!ui.footer.ShowAll())
 		// Show the footer when on repo page and shot all help.
 		if ui.error == nil && ui.activePage == varsPage {
@@ -261,23 +256,21 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case selector.SelectMsg:
 			switch msg.ID() {
 			case "vars":
-				ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 				ui.activePage = varsPage
 				ui.showFooter = ui.footer.ShowAll()
 			case "hosts":
-				ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
 				ui.activePage = hostsPage
 				ui.showFooter = ui.footer.ShowAll()
 			case "deploy":
 				ui.activePage = deployPage
 				ui.showFooter = ui.footer.ShowAll()
 			}
-
-		case selector.ActiveMsg:
-			ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
-
+			/*
+				case selector.ActiveMsg:
+					ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
+			*/
 		}
-		ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
+
 		//ui.activePage = varsPage
 		/*
 			case vars.RepoMsg:
@@ -295,7 +288,7 @@ func (ui *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		/* case selector.SelectMsg:
 		ui.logger.Zap.Debugf("Update() ui.activePage=%d", ui.activePage)
-	
+
 		*/
 		/*
 			case selector.SelectMsg:

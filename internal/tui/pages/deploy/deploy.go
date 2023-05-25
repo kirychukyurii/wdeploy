@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -15,6 +16,7 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/footer"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/statusbar"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/tabs"
+	"io"
 )
 
 /*
@@ -64,6 +66,7 @@ type Inventory struct {
 	activeTab tab
 	tabs      *tabs.Tabs
 	panes     []common.Component
+	sub       chan string
 
 	cfg    config.Config
 	logger logger.Logger
@@ -95,6 +98,7 @@ func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
 		statusbar: sb,
 		tabs:      tb,
 		panes:     panes,
+		sub:       make(chan string),
 		cfg:       cfg,
 		logger:    logger,
 	}
@@ -115,8 +119,6 @@ func (r *Inventory) SetSize(width, height int) {
 	for _, p := range r.panes {
 		p.SetSize(width, height-hm)
 	}
-
-	r.logger.Zap.Debug(fmt.Sprintf("width=%d height=%d hm=%d height-hm=%d", width, height, hm, height-hm))
 }
 
 func (r *Inventory) commonHelp() []key.Binding {
@@ -150,13 +152,12 @@ func (r *Inventory) Init() tea.Cmd {
 	return tea.Batch(
 		r.tabs.Init(),
 		r.statusbar.Init(),
+		waitForActivity(r.sub),
 	)
 }
 
 // Update implements tea.Model.
 func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	r.logger.Zap.Debugf("Inventory.Update() msg.%T=%s", msg, msg)
-
 	cmds := make([]tea.Cmd, 0)
 
 	switch msg := msg.(type) {
@@ -171,9 +172,7 @@ func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//r.tabs.Update()
 
 			// TODO
-			_ = r.deploy()
-
-			r.logger.Zap.Debug(fmt.Sprintf("msg=%d", msg))
+			_ = r.deploy(r.sub)
 		}
 	case RepoMsg:
 		r.activeTab = 0
@@ -183,6 +182,7 @@ func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			r.updateStatusBarCmd,
 			r.updateModels(msg),
 		)
+
 	case tabs.SelectTabMsg:
 		r.activeTab = tab(msg)
 		t, cmd := r.tabs.Update(msg)
@@ -387,12 +387,64 @@ func backCmd() tea.Msg {
 	return BackMsg{}
 }
 
-func (r *Inventory) deploy() error {
+func (i *Inventory) deploy(sub chan string) error {
+	reader, writer := io.Pipe()
+
 	go func() {
-		executor := ansible.NewExecutor(r.cfg, r.logger)
+		r := bufio.NewReader(reader)
+
+		for {
+			line, err := readLine(r)
+			if err != nil {
+				if err != io.EOF {
+					i.logger.Zap.Error(err)
+				}
+
+				break
+			}
+
+			i.logger.Zap.Info(line)
+			sub <- line
+		}
+	}()
+
+	go func() {
+		executor := ansible.NewExecutor(i.cfg, i.logger, writer)
 
 		_ = executor.RunPlaybook()
 	}()
 
 	return nil
+}
+
+func readLine(r *bufio.Reader) (string, error) {
+	var line []byte
+	for {
+		l, more, err := r.ReadLine()
+		if err != nil {
+			return "", err
+		}
+
+		// Avoid the copy if the first call produced a full line.
+		if line == nil && !more {
+			return string(l), nil
+		}
+
+		line = append(line, l...)
+		if !more {
+			break
+		}
+	}
+
+	return string(line), nil
+}
+
+// A command that waits for the activity on a channel.
+func waitForActivity(sub chan string) tea.Cmd {
+	return func() tea.Msg {
+		return LogMsg{
+			message: <-sub,
+			sub:     sub,
+		}
+	}
 }

@@ -72,8 +72,6 @@ func (r *View) SetSize(width, height int) {
 
 	r.code.SetSize(width, height-hm-3)
 	r.dialog.SetSize(width, hm)
-
-	r.logger.Zap.Debug(fmt.Sprintf("width=%d height=%d hm=%d", width, height, r.common.Styles.Dialog.Box.GetHeight()))
 }
 
 // ShortHelp implements help.KeyMap.
