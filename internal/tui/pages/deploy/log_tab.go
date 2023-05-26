@@ -46,7 +46,7 @@ func NewLog(common common.Common, cfg config.Config, logger logger.Logger) *Log 
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 
-	f := &Log{
+	l := &Log{
 		sub:        make(chan string),
 		common:     common,
 		code:       code.New(common, "", ""),
@@ -57,41 +57,41 @@ func NewLog(common common.Common, cfg config.Config, logger logger.Logger) *Log 
 		logger: logger,
 	}
 
-	f.code.SetShowLineNumber(false)
-	return f
+	l.code.SetShowLineNumber(false)
+	return l
 }
 
 // SetSize implements common.Component.
-func (r *Log) SetSize(width, height int) {
-	r.common.SetSize(width, height)
-	r.code.SetSize(width, height)
+func (l *Log) SetSize(width, height int) {
+	l.common.SetSize(width, height)
+	l.code.SetSize(width, height)
 }
 
 // ShortHelp implements help.KeyMap.
-func (r *Log) ShortHelp() []key.Binding {
+func (l *Log) ShortHelp() []key.Binding {
 	b := []key.Binding{
-		r.common.KeyMap.LeftRight,
-		r.common.KeyMap.Select,
-		r.common.KeyMap.UpDown,
-		r.common.KeyMap.BackItem,
+		l.common.KeyMap.LeftRight,
+		l.common.KeyMap.Select,
+		l.common.KeyMap.UpDown,
+		l.common.KeyMap.BackItem,
 	}
 
 	return b
 }
 
 // FullHelp implements help.KeyMap.
-func (r *Log) FullHelp() [][]key.Binding {
-	k := r.common.KeyMap
+func (l *Log) FullHelp() [][]key.Binding {
+	k := l.common.KeyMap
 	b := [][]key.Binding{
 		{
 			k.Left,
 			k.Right,
 			k.Down,
 			k.Up,
-			r.code.KeyMap.PageDown,
-			r.code.KeyMap.PageUp,
-			r.code.KeyMap.HalfPageDown,
-			r.code.KeyMap.HalfPageUp,
+			l.code.KeyMap.PageDown,
+			l.code.KeyMap.PageUp,
+			l.code.KeyMap.HalfPageDown,
+			l.code.KeyMap.HalfPageUp,
 		},
 		{
 			k.Select,
@@ -102,72 +102,72 @@ func (r *Log) FullHelp() [][]key.Binding {
 }
 
 // Init implements tea.Model.
-func (r *Log) Init() tea.Cmd {
-	r.currentContent.content, _ = file.ReadFileContent(r.cfg.GetAnsibleLogLocation())
-	r.code.GotoBottom()
+func (l *Log) Init() tea.Cmd {
+	l.currentContent.content, _ = file.ReadFileContent(l.cfg.GetAnsibleLogLocation())
+	l.code.GotoBottom()
 
 	return tea.Batch(
-		r.code.SetContent(r.currentContent.content, code.PlainTextExt),
+		l.code.SetContent(l.currentContent.content, code.PlainTextExt),
 	)
 }
 
 // Update implements tea.Model.
-func (r *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (l *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if r.currentContent.content != "" {
-			m, cmd := r.code.Update(msg)
-			r.code = m.(*code.Code)
+		if l.currentContent.content != "" {
+			m, cmd := l.code.Update(msg)
+			l.code = m.(*code.Code)
 			if cmd != nil {
 				cmds = append(cmds, cmd)
 			}
 		}
 
 	case LogMsg:
-		r.currentContent.content += fmt.Sprintln(msg.message)
-		r.code.SetContent(r.currentContent.content, code.PlainTextExt)
-		r.code.GotoBottom()
+		l.currentContent.content += fmt.Sprintln(msg.message)
+		l.code.SetContent(l.currentContent.content, code.PlainTextExt)
+		l.code.GotoBottom()
 		cmds = append(cmds, waitForActivity(msg.sub))
 
 	case RepoMsg:
-		r.repo = action.Action(msg)
-		cmd := r.Init()
+		l.repo = action.Action(msg)
+		cmd := l.Init()
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 	}
 
-	c, cmd := r.code.Update(msg)
-	r.code = c.(*code.Code)
+	c, cmd := l.code.Update(msg)
+	l.code = c.(*code.Code)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	return r, tea.Batch(cmds...)
+	return l, tea.Batch(cmds...)
 }
 
 // View implements tea.Model.
-func (r *Log) View() string {
+func (l *Log) View() string {
 	view := lipgloss.JoinVertical(lipgloss.Top,
-		r.code.View(),
+		l.code.View(),
 	)
 
 	return view
 }
 
 // StatusBarValue implements statusbar.StatusBar.
-func (r *Log) StatusBarValue() string {
-	return r.cfg.GetAnsibleLogLocation()
+func (l *Log) StatusBarValue() string {
+	return l.cfg.GetAnsibleLogLocation()
 }
 
 // StatusBarInfo implements statusbar.StatusBar.
-func (r *Log) StatusBarInfo() string {
-	return fmt.Sprintf("☰ %.f%%", r.code.ScrollPercent()*100)
+func (l *Log) StatusBarInfo() string {
+	return fmt.Sprintf("☰ %.f%%", l.code.ScrollPercent()*100)
 }
 
 // StatusBarBranch implements statusbar.StatusBar.
-func (r *Log) StatusBarBranch() string {
-	return fmt.Sprintf("v%s", r.cfg.WebitelVersion)
+func (l *Log) StatusBarBranch() string {
+	return fmt.Sprintf("v%s", l.cfg.WebitelVersion)
 }

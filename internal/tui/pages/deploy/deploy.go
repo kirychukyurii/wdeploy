@@ -19,22 +19,12 @@ import (
 	"io"
 )
 
-/*
-type state int
-
-const (
-	loadingState state = iota
-	loadedState
-)
-*/
-
 type tab int
 
 const (
 	viewTab tab = iota
 	logTab
-	//logTab
-	//testTab
+
 	lastTab
 )
 
@@ -57,8 +47,8 @@ type RepoMsg action.Action
 // BackMsg is a message to go back to the previous view.
 type BackMsg struct{}
 
-// Inventory is a view for a git repository.
-type Inventory struct {
+// Deploy is a view for a git repository.
+type Deploy struct {
 	common       common.Common
 	selectedRepo action.Action
 	statusbar    *statusbar.StatusBar
@@ -73,9 +63,10 @@ type Inventory struct {
 }
 
 // New returns a new Repo.
-func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
+func New(c common.Common, cfg config.Config, logger logger.Logger) *Deploy {
 	sb := statusbar.New(c)
 	ts := make([]string, lastTab)
+
 	// Tabs must match the order of tab constants above.
 	for i, t := range []tab{viewTab, logTab} {
 		ts[i] = t.String()
@@ -84,16 +75,14 @@ func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
 
 	view := NewView(c, cfg, logger)
 	log := NewLog(c, cfg, logger)
-	//test := NewConfig(c, cfg, logger)
 
 	// Make sure the order matches the order of tab constants above.
 	panes := []common.Component{
 		view,
 		log,
-		//	test,
 	}
 
-	r := &Inventory{
+	d := &Deploy{
 		common:    c,
 		statusbar: sb,
 		tabs:      tb,
@@ -102,69 +91,70 @@ func New(c common.Common, cfg config.Config, logger logger.Logger) *Inventory {
 		cfg:       cfg,
 		logger:    logger,
 	}
-	return r
+	return d
 }
 
 // SetSize implements common.Component.
-func (r *Inventory) SetSize(width, height int) {
-	r.common.SetSize(width, height)
+func (d *Deploy) SetSize(width, height int) {
+	d.common.SetSize(width, height)
+	hm := d.common.Styles.Repo.Body.GetVerticalFrameSize() +
+		d.common.Styles.Repo.Header.GetHeight() +
+		d.common.Styles.Repo.Header.GetVerticalFrameSize() +
+		d.common.Styles.StatusBar.GetHeight()
+	d.tabs.SetSize(width, height-hm)
+	d.statusbar.SetSize(width, height-hm)
 
-	hm := r.common.Styles.Repo.Body.GetVerticalFrameSize() +
-		r.common.Styles.Repo.Header.GetHeight() +
-		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
-		r.common.Styles.StatusBar.GetHeight()
-	r.tabs.SetSize(width, height-hm)
-	r.statusbar.SetSize(width, height-hm)
-
-	for _, p := range r.panes {
+	for _, p := range d.panes {
 		p.SetSize(width, height-hm)
 	}
 }
 
-func (r *Inventory) commonHelp() []key.Binding {
+func (d *Deploy) commonHelp() []key.Binding {
 	b := make([]key.Binding, 0)
-	back := r.common.KeyMap.Back
+	back := d.common.KeyMap.Back
 	back.SetHelp("esc", "back to menu")
-	tab := r.common.KeyMap.Section
+	tab := d.common.KeyMap.Section
 	tab.SetHelp("tab", "switch tab")
 	b = append(b, back)
 	b = append(b, tab)
+
 	return b
 }
 
 // ShortHelp implements help.KeyMap.
-func (r *Inventory) ShortHelp() []key.Binding {
-	b := r.commonHelp()
-	b = append(b, r.panes[r.activeTab].(help.KeyMap).ShortHelp()...)
+func (d *Deploy) ShortHelp() []key.Binding {
+	b := d.commonHelp()
+	b = append(b, d.panes[d.activeTab].(help.KeyMap).ShortHelp()...)
+
 	return b
 }
 
 // FullHelp implements help.KeyMap.
-func (r *Inventory) FullHelp() [][]key.Binding {
+func (d *Deploy) FullHelp() [][]key.Binding {
 	b := make([][]key.Binding, 0)
-	b = append(b, r.commonHelp())
-	b = append(b, r.panes[r.activeTab].(help.KeyMap).FullHelp()...)
+	b = append(b, d.commonHelp())
+	b = append(b, d.panes[d.activeTab].(help.KeyMap).FullHelp()...)
+
 	return b
 }
 
 // Init implements tea.Log.
-func (r *Inventory) Init() tea.Cmd {
+func (d *Deploy) Init() tea.Cmd {
 	return tea.Batch(
-		r.tabs.Init(),
-		r.statusbar.Init(),
-		waitForActivity(r.sub),
+		d.tabs.Init(),
+		d.statusbar.Init(),
+		waitForActivity(d.sub),
 	)
 }
 
 // Update implements tea.Model.
-func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (d *Deploy) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 
 	switch msg := msg.(type) {
 	case dialog.SelectDialogButtonMsg:
-		// fmt.Println(msg)
 		if msg == 0 {
-			r.activeTab = logTab
+			d.activeTab = logTab
 			cmd := tabs.SelectTabCmd(int(logTab))
 			if cmd != nil {
 				cmds = append(cmds, cmd)
@@ -172,47 +162,47 @@ func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			//r.tabs.Update()
 
 			// TODO
-			_ = r.deploy(r.sub)
+			_ = d.deploy(d.sub)
 		}
 	case RepoMsg:
-		r.activeTab = 0
-		r.selectedRepo = action.Action(msg) //git.GitRepo(msg)
+		d.activeTab = 0
+		d.selectedRepo = action.Action(msg) //git.GitRepo(msg)
 		cmds = append(cmds,
-			r.tabs.Init(),
-			r.updateStatusBarCmd,
-			r.updateModels(msg),
+			d.tabs.Init(),
+			d.updateStatusBarCmd,
+			d.updateModels(msg),
 		)
 
 	case tabs.SelectTabMsg:
-		r.activeTab = tab(msg)
-		t, cmd := r.tabs.Update(msg)
-		r.tabs = t.(*tabs.Tabs)
+		d.activeTab = tab(msg)
+		t, cmd := d.tabs.Update(msg)
+		d.tabs = t.(*tabs.Tabs)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 	case tabs.ActiveTabMsg:
-		r.activeTab = tab(msg)
+		d.activeTab = tab(msg)
 		cmds = append(cmds,
-			r.updateStatusBarCmd,
+			d.updateStatusBarCmd,
 		)
 	case tea.KeyMsg, tea.MouseMsg:
-		t, cmd := r.tabs.Update(msg)
-		r.tabs = t.(*tabs.Tabs)
+		t, cmd := d.tabs.Update(msg)
+		d.tabs = t.(*tabs.Tabs)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
-		cmds = append(cmds, r.updateStatusBarCmd)
+		cmds = append(cmds, d.updateStatusBarCmd)
 		switch msg := msg.(type) {
 		case tea.MouseMsg:
 			switch msg.Type {
 			case tea.MouseLeft:
 				switch {
-				case r.common.Zone.Get("repo-help").InBounds(msg):
+				case d.common.Zone.Get("repo-help").InBounds(msg):
 					cmds = append(cmds, footer.ToggleFooterCmd)
 				}
 			case tea.MouseRight:
 				switch {
-				case r.common.Zone.Get("repo-main").InBounds(msg):
+				case d.common.Zone.Get("repo-main").InBounds(msg):
 					cmds = append(cmds, backCmd)
 				}
 			}
@@ -221,121 +211,77 @@ func (r *Inventory) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// for now. We need to pass the TickMsg to the Log bubble when the Log is
 	// loading but not the current selected tab so that the spinner works.
 	case UpdateStatusBarMsg:
-		cmds = append(cmds, r.updateStatusBarCmd)
+		cmds = append(cmds, d.updateStatusBarCmd)
 	case tea.WindowSizeMsg:
-		cmds = append(cmds, r.updateModels(msg))
+		cmds = append(cmds, d.updateModels(msg))
 	}
-	s, cmd := r.statusbar.Update(msg)
-	r.statusbar = s.(*statusbar.StatusBar)
+	s, cmd := d.statusbar.Update(msg)
+	d.statusbar = s.(*statusbar.StatusBar)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
-	m, cmd := r.panes[r.activeTab].Update(msg)
-	r.panes[r.activeTab] = m.(common.Component)
+	m, cmd := d.panes[d.activeTab].Update(msg)
+	d.panes[d.activeTab] = m.(common.Component)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	return r, tea.Batch(cmds...)
+	return d, tea.Batch(cmds...)
 }
 
 // View implements tea.Model.
-func (r *Inventory) View() string {
-	//fmt.Println("test")
-	/*
-		s := r.common.Styles.Repo.Base.Copy().
-			Width(r.common.Width).
-			Height(r.common.Height)
-		view := lipgloss.JoinVertical(lipgloss.Top,
-			r.headerView(),
-			r.statusbar.Log(),
-		)
-		return s.Render(view)
-	*/
-
-	s := r.common.Styles.Repo.Base.Copy().
-		Width(r.common.Width).
-		Height(r.common.Height)
-	repoBodyStyle := r.common.Styles.Repo.Body.Copy()
+func (d *Deploy) View() string {
+	s := d.common.Styles.Repo.Base.Copy().
+		Width(d.common.Width).
+		Height(d.common.Height)
+	repoBodyStyle := d.common.Styles.Repo.Body.Copy()
 	hm := repoBodyStyle.GetVerticalFrameSize() +
-		r.common.Styles.Repo.Header.GetHeight() +
-		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
-		r.common.Styles.StatusBar.GetHeight() +
-		r.common.Styles.Tabs.GetHeight() +
-		r.common.Styles.Tabs.GetVerticalFrameSize()
+		d.common.Styles.Repo.Header.GetHeight() +
+		d.common.Styles.Repo.Header.GetVerticalFrameSize() +
+		d.common.Styles.StatusBar.GetHeight() +
+		d.common.Styles.Tabs.GetHeight() +
+		d.common.Styles.Tabs.GetVerticalFrameSize()
 	mainStyle := repoBodyStyle.
-		Height(r.common.Height - hm)
-	main := r.common.Zone.Mark(
+		Height(d.common.Height - hm)
+	main := d.common.Zone.Mark(
 		"repo-main",
-		mainStyle.Render(r.panes[r.activeTab].View()),
+		mainStyle.Render(d.panes[d.activeTab].View()),
 	)
 	view := lipgloss.JoinVertical(lipgloss.Top,
-		r.headerView(),
-		r.tabs.View(),
+		d.headerView(),
+		d.tabs.View(),
 		main,
-		r.statusbar.View(),
+		d.statusbar.View(),
 	)
+
 	return s.Render(view)
 }
 
-func (r *Inventory) headerView() string {
-	/*
-		if r.selectedRepo == nil {
-			return ""
-		}
-		truncate := lipgloss.NewStyle().MaxWidth(r.common.Width)
-		name := r.common.Styles.Repo.HeaderName.Render(r.selectedRepo.Title())
-		desc := r.selectedRepo.Description()
-		if desc == "" {
-			desc = name
-			name = ""
-		} else {
-			desc = r.common.Styles.Repo.HeaderDesc.Render(desc)
-		}
-		urlStyle := r.common.Styles.URLStyle.Copy().
-			Width(r.common.Width - lipgloss.Width(desc) - 1).
-			Align(lipgloss.Right)
-		url := r.selectedRepo.ID()
-
-		url = common.TruncateString(url, r.common.Width-lipgloss.Width(desc)-1)
-		url = r.common.Zone.Mark(
-			fmt.Sprintf("%s-url", r.selectedRepo.ID()),
-			urlStyle.Render(url),
-		)
-		style := r.common.Styles.Repo.Header.Copy().Width(r.common.Width)
-		return style.Render(
-			lipgloss.JoinVertical(lipgloss.Top,
-				truncate.Render(name),
-				truncate.Render(lipgloss.JoinHorizontal(lipgloss.Left,
-					desc,
-					url,
-				)),
-			),
-		)
-	*/
-	if r.selectedRepo == nil {
+func (d *Deploy) headerView() string {
+	if d.selectedRepo == nil {
 		return ""
 	}
-	truncate := lipgloss.NewStyle().MaxWidth(r.common.Width)
-	name := r.common.Styles.Repo.HeaderName.Render(r.selectedRepo.Title())
-	desc := r.selectedRepo.Description()
+	truncate := lipgloss.NewStyle().MaxWidth(d.common.Width)
+	name := d.common.Styles.Repo.HeaderName.Render(d.selectedRepo.Title())
+	desc := d.selectedRepo.Description()
 	if desc == "" {
 		desc = name
 		name = ""
 	} else {
-		desc = r.common.Styles.Repo.HeaderDesc.Render(desc)
+		desc = d.common.Styles.Repo.HeaderDesc.Render(desc)
 	}
-	urlStyle := r.common.Styles.URLStyle.Copy().
-		Width(r.common.Width - lipgloss.Width(desc) - 1).
+	urlStyle := d.common.Styles.URLStyle.Copy().
+		Width(d.common.Width - lipgloss.Width(desc) - 1).
 		Align(lipgloss.Right)
-	url := r.selectedRepo.ID()
+	url := d.selectedRepo.ID()
 
-	url = common.TruncateString(url, r.common.Width-lipgloss.Width(desc)-1)
-	url = r.common.Zone.Mark(
-		fmt.Sprintf("%s-url", r.selectedRepo.ID()),
+	url = common.TruncateString(url, d.common.Width-lipgloss.Width(desc)-1)
+	url = d.common.Zone.Mark(
+		fmt.Sprintf("%s-url", d.selectedRepo.ID()),
 		urlStyle.Render(url),
 	)
-	style := r.common.Styles.Repo.Header.Copy().Width(r.common.Width)
+	style := d.common.Styles.Repo.Header.Copy().Width(d.common.Width)
+
 	return style.Render(
 		lipgloss.JoinVertical(lipgloss.Top,
 			truncate.Render(name),
@@ -347,30 +293,24 @@ func (r *Inventory) headerView() string {
 	)
 }
 
-func (r *Inventory) updateStatusBarCmd() tea.Msg {
-	/*
-		if r.selectedRepo == nil {
-			return nil
-		}
-	*/
-
-	value := r.panes[r.activeTab].(statusbar.Model).StatusBarValue()
-	info := r.panes[r.activeTab].(statusbar.Model).StatusBarInfo()
-	branch := r.panes[r.activeTab].(statusbar.Model).StatusBarBranch()
+func (d *Deploy) updateStatusBarCmd() tea.Msg {
+	value := d.panes[d.activeTab].(statusbar.Model).StatusBarValue()
+	info := d.panes[d.activeTab].(statusbar.Model).StatusBarInfo()
+	branch := d.panes[d.activeTab].(statusbar.Model).StatusBarBranch()
 
 	return statusbar.StatusBarMsg{
-		Key:    r.selectedRepo.ID(),
+		Key:    d.selectedRepo.ID(),
 		Value:  value,
 		Info:   info,
 		Branch: branch,
 	}
 }
 
-func (r *Inventory) updateModels(msg tea.Msg) tea.Cmd {
+func (d *Deploy) updateModels(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, 0)
-	for i, b := range r.panes {
+	for i, b := range d.panes {
 		m, cmd := b.Update(msg)
-		r.panes[i] = m.(common.Component)
+		d.panes[i] = m.(common.Component)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -387,7 +327,7 @@ func backCmd() tea.Msg {
 	return BackMsg{}
 }
 
-func (i *Inventory) deploy(sub chan string) error {
+func (d *Deploy) deploy(sub chan string) error {
 	reader, writer := io.Pipe()
 
 	go func() {
@@ -397,19 +337,19 @@ func (i *Inventory) deploy(sub chan string) error {
 			line, err := readLine(r)
 			if err != nil {
 				if err != io.EOF {
-					i.logger.Zap.Error(err)
+					d.logger.Zap.Error(err)
 				}
 
 				break
 			}
 
-			i.logger.Zap.Info(line)
+			d.logger.Zap.Info(line)
 			sub <- line
 		}
 	}()
 
 	go func() {
-		executor := ansible.NewExecutor(i.cfg, i.logger, writer)
+		executor := ansible.NewExecutor(d.cfg, d.logger, writer)
 
 		_ = executor.RunPlaybook()
 	}()
