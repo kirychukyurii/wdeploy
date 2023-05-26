@@ -12,7 +12,7 @@ import (
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/header"
 	"github.com/kirychukyurii/wdeploy/internal/tui/components/selector"
 	"github.com/kirychukyurii/wdeploy/internal/tui/pages/deploy"
-	"github.com/kirychukyurii/wdeploy/internal/tui/pages/hosts"
+	"github.com/kirychukyurii/wdeploy/internal/tui/pages/inventory"
 	"github.com/kirychukyurii/wdeploy/internal/tui/pages/selection"
 	"github.com/kirychukyurii/wdeploy/internal/tui/pages/vars"
 )
@@ -140,7 +140,7 @@ func (ui *UI) SetSize(width, height int) {
 func (ui *UI) Init() tea.Cmd {
 	ui.pages[selectionPage] = selection.New(ui.common, ui.logger)
 	ui.pages[varsPage] = vars.New(ui.common, ui.cfg, ui.logger)
-	ui.pages[hostsPage] = hosts.New(ui.common, ui.cfg, ui.logger)
+	ui.pages[hostsPage] = inventory.New(ui.common, ui.cfg, ui.logger)
 	ui.pages[deployPage] = deploy.New(ui.common, ui.cfg, ui.logger)
 
 	/*
