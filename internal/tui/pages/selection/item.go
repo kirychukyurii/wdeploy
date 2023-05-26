@@ -101,26 +101,10 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	title := i.Title()
 	title = common.TruncateString(title, m.Width()-styles.Base.GetHorizontalFrameSize())
-	/*
-		if i.repo.IsPrivate() {
-			title += " 🔒"
-		}
-	*/
+
 	if isSelected {
 		title += " "
 	}
-	/*
-			updatedStr := fmt.Sprintf(" Updated %s", humanize.Time(i.lastUpdate))
-			if m.Width()-styles.Base.GetHorizontalFrameSize()-lipgloss.Width(updatedStr)-lipgloss.Width(title) <= 0 {
-				updatedStr = ""
-			}
-
-
-		updatedStyle := styles.Updated.Copy().
-			Align(lipgloss.Right).
-			Width(m.Width() - styles.Base.GetHorizontalFrameSize() - lipgloss.Width(title))
-		updated := updatedStyle.Render(updatedStr)
-	*/
 
 	if isFiltered && index < len(m.VisibleItems()) {
 		// Get indices of matched characters
@@ -143,11 +127,7 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	s.WriteRune('\n')
 	cmd := common.TruncateString(i.Command(), m.Width()-styles.Base.GetHorizontalFrameSize())
 	cmd = styles.Command.Render(cmd)
-	/*
-		if !i.copied.IsZero() && i.copied.Add(time.Second).After(time.Now()) {
-			cmd = styles.Command.Render("Copied!")
-		}
-	*/
+
 	s.WriteString(cmd)
 	fmt.Fprint(w,
 		d.common.Zone.Mark(i.Title(),

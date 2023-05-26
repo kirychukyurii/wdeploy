@@ -106,13 +106,10 @@ func (s *Selection) ShortHelp() []key.Binding {
 		s.common.KeyMap.Section,
 	)
 	if s.activePane == selectorPane {
-		copyKey := s.common.KeyMap.Copy
-		copyKey.SetHelp("c", "copy command")
 		kb = append(kb,
 			s.common.KeyMap.Select,
 			k.Filter,
 			k.ClearFilter,
-			copyKey,
 		)
 	}
 	return kb
@@ -127,13 +124,10 @@ func (s *Selection) FullHelp() [][]key.Binding {
 	}
 	switch s.activePane {
 	case selectorPane:
-		copyKey := s.common.KeyMap.Copy
-		copyKey.SetHelp("c", "copy command")
 		k := s.selector.KeyMap
 		if !s.IsFiltering() {
 			b[0] = append(b[0],
 				s.common.KeyMap.Select,
-				copyKey,
 			)
 		}
 		b = append(b, []key.Binding{
@@ -159,9 +153,6 @@ func (s *Selection) FullHelp() [][]key.Binding {
 // Init implements tea.Model.
 func (s *Selection) Init() tea.Cmd {
 	items := make([]selector.IdentifiableItem, 0)
-
-	//actions := app.ActionItems.New()
-
 	actions := action.ActionItems{
 		action.ActionItem{
 			Command: "vars",
@@ -196,7 +187,6 @@ func (s *Selection) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (s *Selection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
