@@ -107,7 +107,7 @@ func (r *Log) Init() tea.Cmd {
 	r.code.GotoBottom()
 
 	return tea.Batch(
-		r.code.SetContent(r.currentContent.content, ".yml"),
+		r.code.SetContent(r.currentContent.content, code.PlainTextExt),
 	)
 }
 
@@ -127,7 +127,7 @@ func (r *Log) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case LogMsg:
 		r.currentContent.content += fmt.Sprintln(msg.message)
-		r.code.SetContent(r.currentContent.content, ".yml")
+		r.code.SetContent(r.currentContent.content, code.PlainTextExt)
 		r.code.GotoBottom()
 		cmds = append(cmds, waitForActivity(msg.sub))
 
@@ -159,7 +159,7 @@ func (r *Log) View() string {
 
 // StatusBarValue implements statusbar.StatusBar.
 func (r *Log) StatusBarValue() string {
-	return ""
+	return r.cfg.GetAnsibleLogLocation()
 }
 
 // StatusBarInfo implements statusbar.StatusBar.

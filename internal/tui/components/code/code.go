@@ -2,6 +2,7 @@ package code
 
 import (
 	"fmt"
+	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/lexers"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -21,6 +22,7 @@ const (
 var (
 	lineDigitStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("239"))
 	lineBarStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("236"))
+	PlainTextExt   = ".plain-text"
 )
 
 // Code is a code snippet.
@@ -80,7 +82,6 @@ func (r *Code) SetContent(c, ext string) tea.Cmd {
 
 // Init implements tea.Model.
 func (r *Code) Init() tea.Cmd {
-	//fmt.Println("test code init" + r.content)
 	w := r.common.Width
 	c := r.content
 	if c == "" {
@@ -187,25 +188,31 @@ func (r *Code) renderFile(path, content string, width int) (string, error) {
 	// width depends on the terminal. This is a workaround to replace tabs with
 	// 4-spaces.
 	content = strings.ReplaceAll(content, "\t", strings.Repeat(" ", tabWidth))
-	// lexer := lexers.Fallback
-	lexer := lexers.Analyse(content)
-	if path != "" {
+
+	var (
+		lexer chroma.Lexer
+		lang  string
+		c     string
+	)
+
+	if path == PlainTextExt {
+		return lipgloss.NewStyle().Width(width).Render(content), nil
+	}
+
+	if path == "" {
+		lexer = lexers.Analyse(content)
+		if lexer == nil {
+			lexer = lexers.Fallback
+		}
+	} else {
 		lexer = lexers.Match(path)
 	}
-	/*
-		if path == "" {
-			lexer = lexers.Analyse(content)
-		} else {
-			lexer = lexers.Match(path)
-		}
-	*/
 
-	lang := ""
+	// lang := ""
 	if lexer != nil && lexer.Config() != nil {
 		lang = lexer.Config().Name
 	}
 
-	var c string
 	if lang == "markdown" {
 		md, err := r.glamourize(width, content)
 		if err != nil {
