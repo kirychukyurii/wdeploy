@@ -102,7 +102,7 @@ func toWriter(config config.Config) zapcore.WriteSyncer {
 
 		// file rotation
 		zapcore.AddSync(&lumberjack.Logger{
-			Filename:   filepath.Join(fp, "tasker") + ".log",
+			Filename:   filepath.Join(fp, constants.AppName) + ".log",
 			MaxSize:    100,
 			MaxAge:     0,
 			MaxBackups: 0,
