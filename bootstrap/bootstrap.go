@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/kirychukyurii/wdeploy/internal/api"
 	"github.com/kirychukyurii/wdeploy/internal/config"
 	"github.com/kirychukyurii/wdeploy/internal/lib"
 	"github.com/kirychukyurii/wdeploy/internal/lib/file"
@@ -47,6 +48,8 @@ func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Confi
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logger.Zap.Info("Starting Application")
+
+			api.SetDebug()
 
 			go func() {
 				logger.Zap.Debug("Started goroutine")
