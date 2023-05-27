@@ -119,7 +119,7 @@ func (v *View) Init() tea.Cmd {
 	v.code.GotoTop()
 	return tea.Batch(
 		v.dialog.Init(),
-		v.code.SetContent(view, ".yml"),
+		v.code.SetContent(view, ".md"),
 	)
 }
 
