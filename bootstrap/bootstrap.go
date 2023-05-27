@@ -49,7 +49,7 @@ func bootstrap(lifecycle fx.Lifecycle, logger logger.Logger, config config.Confi
 		OnStart: func(context.Context) error {
 			logger.Zap.Info("Starting Application")
 
-			api.SetDebug()
+			api.SetDebug(logger)
 
 			go func() {
 				logger.Zap.Debug("Started goroutine")
