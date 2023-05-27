@@ -139,7 +139,14 @@ func (v *View) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		v.repo = action.Action(msg)
 		cmds = append(cmds, v.Init())
 	}
-	_, cmd := v.dialog.Update(msg)
+	d, cmd := v.dialog.Update(msg)
+	v.dialog = d.(*dialog.Dialog)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	c, cmd := v.code.Update(msg)
+	v.code = c.(*code.Code)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
