@@ -15,8 +15,15 @@ all:
         - rabbitmq
         - postgresql
         - postgresql_main
+        - grafana
         - freeswitch
         - rtpengine
         - opensips
         - nginx
+        - webitel_core
+        - webitel_engine
+        - webitel_call_center
+        - webitel_flow_manager
+        - webitel_storage
+        - webitel_messages
 `
