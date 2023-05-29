@@ -22,7 +22,7 @@ You can also download a binary from the [releases][releases] page. Packages are
 available in Alpine, Debian, and RPM formats. Binaries are available for Linux,
 macOS, and Windows.
 
-[releases]: https://github.com/charmbracelet/soft-serve/releases
+[releases]: https://github.com/kirychukyurii/wdeploy/releases
 
 ## Help
 
@@ -53,3 +53,5 @@ Flags:
 ```bash
 wdeploy run --user "webitel" --password "demo" --deploy-type local --log-level info
 ```
+
+<a href="https://social.webitel.me/@news"><img src="https://raw.githubusercontent.com/kirychukyurii/wdeploy/main/assets/webitel-header.png" with="100%" alt="Webitel logo"></a>
