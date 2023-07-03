@@ -15,7 +15,7 @@ require (
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/roff v0.1.0
-	github.com/muesli/termenv v0.15.1
+	github.com/muesli/termenv v0.15.2
 	github.com/spf13/cobra v1.7.0
 	go.uber.org/fx v1.19.3
 	go.uber.org/zap v1.24.0
