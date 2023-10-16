@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/bubbles v0.16.1
 	github.com/charmbracelet/bubbletea v0.24.2
 	github.com/charmbracelet/glamour v0.6.0
-	github.com/charmbracelet/lipgloss v0.7.1
+	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/go-git/go-git/v5 v5.7.0
 	github.com/lrstanley/bubblezone v0.0.0-20230303230241-08f906ff62a9
 	github.com/muesli/mango-cobra v1.2.0
@@ -52,7 +52,7 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.21 // indirect
 	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -78,7 +78,7 @@ require (
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
